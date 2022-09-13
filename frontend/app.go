@@ -108,6 +108,7 @@ func (app *App) GetFileInfoByPid(pid int) FileInfo {
 	// 通过程序pid获取文件信息
 	// 通过wmic获取进程信息
 	cmd := exec.Command("wmic", "process", "where", "processid="+fmt.Sprint(pid), "get", "executablepath")
+	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 	out, err := cmd.Output()
 	// gbk转utf8
 	out, err = GbkToUtf8(out)
@@ -135,6 +136,5 @@ func (app *App) GetFileInfoByPid(pid int) FileInfo {
 		Size:    fileInfo.Size(),
 		ModTime: fileInfo.ModTime().Format("2006-01-02 15:04:05"),
 	}
-	println(jsFileInfo.ModTime)
 	return jsFileInfo
 }
