@@ -1,0 +1,11 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body,
+#app {
+  background-color: rgba(253, 253, 253, 1);
+  height: 100%;
+  overflow: hidden;
+}
