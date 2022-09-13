@@ -19,6 +19,11 @@ endif()
 link_libraries(detours.lib Ws2_32.lib)
 
 add_library(HookDemo SHARED main.cpp UDPClient/UDPClient.cpp UDPClient/UDPClient.h Base64/base64.cpp Base64/base64.h Locale/Locale.cpp Locale/Locale.h)
-INSTALL(TARGETS HookDemo)
 
 add_executable(Injector Injector/Injector.cpp)
+
+add_custom_command(TARGET HookDemo POST_BUILD
+        COMMAND echo "Copy target to frontend"
+        COMMAND ${CMAKE_COMMAND} -E copy HookDemo.dll ../../frontend/HookDemo.dll
+        COMMAND ${CMAKE_COMMAND} -E copy Injector.exe ../../frontend/Injector.exe
+        )
