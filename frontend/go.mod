@@ -2,7 +2,10 @@ module changeme
 
 go 1.17
 
-require github.com/wailsapp/wails/v2 v2.0.0-beta.43
+require (
+	github.com/wailsapp/wails/v2 v2.0.0-beta.43
+	golang.org/x/text v0.3.7
+)
 
 require (
 	github.com/bep/debounce v1.2.1 // indirect
@@ -26,7 +29,6 @@ require (
 	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5 // indirect
 	golang.org/x/net v0.0.0-20211015210444-4f30a5c0130f // indirect
 	golang.org/x/sys v0.0.0-20220114195835-da31bd327af9 // indirect
-	golang.org/x/text v0.3.7 // indirect
 )
 
 // replace github.com/wailsapp/wails/v2 v2.0.0-beta.43 => C:\Users\yll20\go\pkg\mod\github.com\wailsapp\wails\v2@v2.0.0-beta.43

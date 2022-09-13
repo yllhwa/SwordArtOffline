@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io/ioutil"
 	"net"
 	"os"
 	"strings"
@@ -12,6 +14,8 @@ import (
 	"os/exec"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
+	"golang.org/x/text/encoding/simplifiedchinese"
+	"golang.org/x/text/transform"
 )
 
 // App struct
@@ -90,11 +94,23 @@ type FileInfo struct {
 	ModTime string `json:"modTime"`
 }
 
+// GbkToUtf8 gbk转utf8
+func GbkToUtf8(src []byte) ([]byte, error) {
+	reader := transform.NewReader(bytes.NewReader(src), simplifiedchinese.GBK.NewDecoder())
+	d, e := ioutil.ReadAll(reader)
+	if e != nil {
+		return nil, e
+	}
+	return d, nil
+}
+
 func (app *App) GetFileInfoByPid(pid int) FileInfo {
 	// 通过程序pid获取文件信息
 	// 通过wmic获取进程信息
 	cmd := exec.Command("wmic", "process", "where", "processid="+fmt.Sprint(pid), "get", "executablepath")
 	out, err := cmd.Output()
+	// gbk转utf8
+	out, err = GbkToUtf8(out)
 	if err != nil {
 		println("获取文件信息失败:", err)
 		return FileInfo{}
