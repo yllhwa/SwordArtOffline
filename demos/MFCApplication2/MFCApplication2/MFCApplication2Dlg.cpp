@@ -48,6 +48,7 @@ BEGIN_MESSAGE_MAP(CMFCApplication2Dlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON7, &CMFCApplication2Dlg::OnBnClickedButton7)
 	ON_BN_CLICKED(IDC_BUTTON8, &CMFCApplication2Dlg::OnBnClickedButton8)
 	ON_BN_CLICKED(IDC_BUTTON9, &CMFCApplication2Dlg::OnBnClickedButton9)
+	ON_BN_CLICKED(IDC_BUTTON10, &CMFCApplication2Dlg::OnBnClickedButton10)
 END_MESSAGE_MAP()
 
 
@@ -282,4 +283,14 @@ void CMFCApplication2Dlg::OnBnClickedButton9()
 	// 删除注册表
 	RegDeleteValue(hKey, _T("Test"));
 	RegCloseKey(hKey);
+}
+
+
+void CMFCApplication2Dlg::OnBnClickedButton10()
+{
+	HANDLE handle = HeapCreate(HEAP_CREATE_ENABLE_EXECUTE, 0, 0);
+	LPVOID lpMem = HeapAlloc(handle, 0, 1024);
+	HeapFree(handle, 0, lpMem);
+	HeapDestroy(handle);
+	HeapDestroy(0);
 }
