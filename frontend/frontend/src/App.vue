@@ -41,6 +41,13 @@ EventsOn('udpMessage', (data) => {
       Base64.decode(dataArr[dataArr.length - 1]) : dataArr[dataArr.length - 1]
   };
   _data.tag = getTagByData(_data);
+  // 删除params中携带的`(danger)`
+  _data.params = _data.params.map(param => {
+    if (param[1].includes('(danger)')) {
+      param[1] = param[1].replace('(danger)', '');
+    }
+    return param;
+  });
   store.analysisData.push(_data);
 });
 </script>

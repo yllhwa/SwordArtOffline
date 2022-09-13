@@ -194,6 +194,10 @@ extern "C" __declspec(dllexport) LPVOID WINAPI NewHeapAlloc(HANDLE hHeap, DWORD 
 
 extern "C" __declspec(dllexport) BOOL WINAPI NewHeapFree(HANDLE hHeap, DWORD dwFlags, LPVOID lpMem) {
     BOOL result = OldHeapFree(hHeap, dwFlags, lpMem);
+    // 若hHeap未被创建，则不记录
+    if (heapHandleSet.find((int) hHeap) == heapHandleSet.end()) {
+        return result;
+    }
     LONG _funcLock = (LONG) TlsGetValue(heapFreeLock);
     if (_funcLock == 0) {
         TlsSetValue(heapFreeLock, (LPVOID) 1);

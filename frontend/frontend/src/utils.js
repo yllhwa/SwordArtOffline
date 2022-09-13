@@ -40,6 +40,13 @@ let getTagByData = (data) => {
     tag.type = "危险";
     tag.message = "修改注册表自启动";
     tag.en = "error";
+  } else if (
+    data.funcName == "HeapDestroy" &&
+    data.params[0][1].endsWith("(danger)")
+  ) {
+    tag.type = "危险";
+    tag.message = "异常内存销毁";
+    tag.en = "error";
   }
   return tag;
 };

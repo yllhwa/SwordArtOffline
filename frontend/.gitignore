@@ -2,3 +2,4 @@ HookDemo.dll
 Injector.exe
 build/bin/
 !build/
+test.exe
