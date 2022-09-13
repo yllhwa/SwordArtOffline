@@ -8,8 +8,10 @@
 #include "detours.h"
 #include "Locale/Locale.h"
 
+static LONG heapCreateLock = 0;
 static LONG heapAllocLock = 0;
 static LONG heapFreeLock = 0;
+static LONG heapDestroyLock = 0;
 
 void StartHook();
 
@@ -62,9 +64,9 @@ extern "C" __declspec(dllexport) int WINAPI NewMessageBoxW(HWND hWnd, LPCWSTR lp
 }
 
 // 文件操作 CreatFileA, WriteFile, ReadFile, CloseHandle
-HANDLE (WINAPI *OldCreatFileA)(LPCSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode,
-                               LPSECURITY_ATTRIBUTES lpSecurityAttributes, DWORD dwCreationDisposition,
-                               DWORD dwFlagsAndAttributes, HANDLE hTemplateFile) = CreateFileA;
+HANDLE (WINAPI *OldCreateFileA)(LPCSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode,
+                                LPSECURITY_ATTRIBUTES lpSecurityAttributes, DWORD dwCreationDisposition,
+                                DWORD dwFlagsAndAttributes, HANDLE hTemplateFile) = CreateFileA;
 
 BOOL (WINAPI *OldWriteFile)(HANDLE hFile, LPCVOID lpBuffer, DWORD nNumberOfBytesToWrite, LPDWORD lpNumberOfBytesWritten,
                             LPOVERLAPPED lpOverlapped) = WriteFile;
@@ -75,11 +77,11 @@ BOOL (WINAPI *OldReadFile)(HANDLE hFile, LPVOID lpBuffer, DWORD nNumberOfBytesTo
 BOOL (WINAPI *OldCloseHandle)(HANDLE hObject) = CloseHandle;
 
 extern "C" __declspec(dllexport) HANDLE
-WINAPI NewCreatFileA(LPCSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode,
-                     LPSECURITY_ATTRIBUTES lpSecurityAttributes, DWORD dwCreationDisposition,
-                     DWORD dwFlagsAndAttributes, HANDLE hTemplateFile) {
-    HANDLE result = OldCreatFileA(lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition,
-                                  dwFlagsAndAttributes, hTemplateFile);
+WINAPI NewCreateFileA(LPCSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode,
+                      LPSECURITY_ATTRIBUTES lpSecurityAttributes, DWORD dwCreationDisposition,
+                      DWORD dwFlagsAndAttributes, HANDLE hTemplateFile) {
+    HANDLE result = OldCreateFileA(lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition,
+                                   dwFlagsAndAttributes, hTemplateFile);
     std::ostringstream outputStringBuilder;
     outputStringBuilder << "pid\n" << GetCurrentProcessId()
                         << "\nfuncName\n" << "CreateFileA"
@@ -152,17 +154,26 @@ BOOL (WINAPI *OldHeapFree)(HANDLE hHeap, DWORD dwFlags, LPVOID lpMem) = HeapFree
 
 BOOL (WINAPI *OldHeapDestroy)(HANDLE hHeap) = HeapDestroy;
 
+std::unordered_set<int> heapHandleSet;
+
 extern "C" __declspec(dllexport) HANDLE
 WINAPI NewHeapCreate(DWORD flOptions, SIZE_T dwInitialSize, SIZE_T dwMaximumSize) {
     HANDLE result = OldHeapCreate(flOptions, dwInitialSize, dwMaximumSize);
-    std::ostringstream outputStringBuilder;
-    outputStringBuilder << "pid\n" << GetCurrentProcessId()
-                        << "\nfuncName\n" << "HeapCreate"
-                        << "\nflOptions\n" << flOptions
-                        << "\ndwInitialSize\n" << dwInitialSize
-                        << "\ndwMaximumSize\n" << dwMaximumSize
-                        << "\nresult\n" << result;
-    sendUdpPacked(outputStringBuilder.str().c_str());
+    LONG _funcLock = (LONG) TlsGetValue(heapCreateLock);
+    if (_funcLock == 0) {
+        TlsSetValue(heapCreateLock, (LPVOID) 1);
+        heapHandleSet.insert((int) result);
+        // send udp message
+        std::ostringstream outputStringBuilder;
+        outputStringBuilder << "pid\n" << GetCurrentProcessId()
+                            << "\nfuncName\n" << "HeapCreate"
+                            << "\nflOptions\n" << flOptions
+                            << "\ndwInitialSize\n" << dwInitialSize
+                            << "\ndwMaximumSize\n" << dwMaximumSize
+                            << "\nresult\n" << result;
+        sendUdpPacked(outputStringBuilder.str().c_str());
+        TlsSetValue(heapCreateLock, (LPVOID) 0);
+    }
     return result;
 }
 
@@ -183,9 +194,9 @@ extern "C" __declspec(dllexport) LPVOID WINAPI NewHeapAlloc(HANDLE hHeap, DWORD 
 
 extern "C" __declspec(dllexport) BOOL WINAPI NewHeapFree(HANDLE hHeap, DWORD dwFlags, LPVOID lpMem) {
     BOOL result = OldHeapFree(hHeap, dwFlags, lpMem);
-    LONG _funcLock = (LONG) TlsGetValue(heapAllocLock);
+    LONG _funcLock = (LONG) TlsGetValue(heapFreeLock);
     if (_funcLock == 0) {
-        TlsSetValue(heapAllocLock, (LPVOID) 1);
+        TlsSetValue(heapFreeLock, (LPVOID) 1);
         if (heapSet.find((int) lpMem) == heapSet.end()) {
             std::ostringstream outputStringBuilder;
             outputStringBuilder << "pid\n" << GetCurrentProcessId()
@@ -198,18 +209,33 @@ extern "C" __declspec(dllexport) BOOL WINAPI NewHeapFree(HANDLE hHeap, DWORD dwF
         } else {
             heapSet.erase((int) lpMem);
         }
-        TlsSetValue(heapAllocLock, (LPVOID) 0);
+        TlsSetValue(heapFreeLock, (LPVOID) 0);
     }
     return result;
 }
 extern "C" __declspec(dllexport) BOOL WINAPI NewHeapDestroy(HANDLE hHeap) {
     BOOL result = OldHeapDestroy(hHeap);
-    std::ostringstream outputStringBuilder;
-    outputStringBuilder << "pid\n" << GetCurrentProcessId()
-                        << "\nfuncName\n" << "HeapDestroy"
-                        << "\nhHeap\n" << hHeap
-                        << "\nresult\n" << result;
-    sendUdpPacked(outputStringBuilder.str().c_str());
+    LONG _funcLock = (LONG) TlsGetValue(heapDestroyLock);
+    if (_funcLock == 0) {
+        TlsSetValue(heapDestroyLock, (LPVOID) 1);
+        if (heapHandleSet.find((int) hHeap) == heapHandleSet.end()) {
+            std::ostringstream outputStringBuilder;
+            outputStringBuilder << "pid\n" << GetCurrentProcessId()
+                                << "\nfuncName\n" << "HeapDestroy"
+                                << "\nhHeap\n" << hHeap << "(danger)"
+                                << "\nresult\n" << result;
+            sendUdpPacked(outputStringBuilder.str().c_str());
+        } else {
+            std::ostringstream outputStringBuilder;
+            outputStringBuilder << "pid\n" << GetCurrentProcessId()
+                                << "\nfuncName\n" << "HeapDestroy"
+                                << "\nhHeap\n" << hHeap
+                                << "\nresult\n" << result;
+            sendUdpPacked(outputStringBuilder.str().c_str());
+            heapHandleSet.erase((int) hHeap);
+        }
+        TlsSetValue(heapDestroyLock, (LPVOID) 0);
+    }
     return result;
 }
 
@@ -457,7 +483,7 @@ void StartHook() {
     DetourAttach(&(PVOID &) OldMessageBoxA, NewMessageBoxA);
     DetourAttach(&(PVOID &) OldMessageBoxW, NewMessageBoxW);
     // 文件操作
-    DetourAttach(&(PVOID &) OldCreatFileA, NewCreatFileA);
+    DetourAttach(&(PVOID &) OldCreateFileA, NewCreateFileA);
     DetourAttach(&(PVOID &) OldWriteFile, NewWriteFile);
     DetourAttach(&(PVOID &) OldReadFile, NewReadFile);
 //    DetourAttach(&(PVOID &) OldCloseHandle, NewCloseHandle);
@@ -491,7 +517,7 @@ void EndHook() {
     DetourDetach(&(PVOID &) OldMessageBoxA, NewMessageBoxA);
     DetourDetach(&(PVOID &) OldMessageBoxW, NewMessageBoxW);
     // 文件操作
-    DetourDetach(&(PVOID &) OldCreatFileA, NewCreatFileA);
+    DetourDetach(&(PVOID &) OldCreateFileA, NewCreateFileA);
     DetourDetach(&(PVOID &) OldWriteFile, NewWriteFile);
     DetourDetach(&(PVOID &) OldReadFile, NewReadFile);
 //    DetourDetach(&(PVOID &) OldCloseHandle, NewCloseHandle);
@@ -524,18 +550,26 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
 //            if (GetModuleHandleA("HookDemo.dll") != nullptr) {
 //                return TRUE;
 //            }
+            heapCreateLock = TlsAlloc();
             heapAllocLock = TlsAlloc();
             heapFreeLock = TlsAlloc();
+            heapDestroyLock = TlsAlloc();
+            TlsSetValue(heapCreateLock, 0);
             TlsSetValue(heapAllocLock, (PVOID) 0);
             TlsSetValue(heapFreeLock, (PVOID) 0);
+            TlsSetValue(heapDestroyLock, (PVOID) 0);
             initUDPClient();
             StartHook();
             break;
         case DLL_THREAD_ATTACH:
+            heapCreateLock = TlsAlloc();
             heapAllocLock = TlsAlloc();
             heapFreeLock = TlsAlloc();
+            heapDestroyLock = TlsAlloc();
+            TlsSetValue(heapCreateLock, 0);
             TlsSetValue(heapAllocLock, (PVOID) 0);
             TlsSetValue(heapFreeLock, (PVOID) 0);
+            TlsSetValue(heapDestroyLock, (PVOID) 0);
             break;
         case DLL_THREAD_DETACH:
             break;
