@@ -1,5 +1,5 @@
 <script setup>
-import { NInput, NButton, NCheckbox, NInputNumber, NSwitch, NAlert, NProgress, NSpin, NModal, NInputGroup } from "naive-ui";
+import { NInput, NButton, NInputGroup } from "naive-ui";
 import { NIcon } from "naive-ui";
 import { AppGeneric20Regular, Syringe20Regular, Home20Regular } from "@vicons/fluent";
 import { OpenExeDialog, InjectExe } from '../../wailsjs/go/main/App'
@@ -59,24 +59,7 @@ let onInjectClick = () => {
                 <span>{{ store.isInjecting ? `停止注入` : `开始注入` }}</span>
             </n-button>
         </div>
-
-
-        <!-- <n-checkbox>出现问题时通知我</n-checkbox>
-            <n-input-number clearable />
-            <n-switch />
-            <n-alert title="成功" type="success">
-                你先别急
-            </n-alert>
-            <n-progress type="line" :percentage="60" :indicator-placement="'inside'" processing />
-            <n-spin size="large" />
-            <n-button @click="showModal = true">
-                模态框
-            </n-button>
-            <n-modal v-model:show="showModal" preset="dialog" title="确认" content="你确认?" positive-text="确认"
-                negative-text="算了" /> -->
-
     </div>
-
 </template>
 
 <style scoped>

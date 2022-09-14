@@ -5,13 +5,13 @@ import { DataPie20Regular, Dismiss20Regular } from '@vicons/fluent';
 import { store } from '../store.js';
 import { GetFileInfoByPid } from '../../wailsjs/go/main/App'
 
+// 按类别筛选
 let dataFilter = $ref(["弹窗", "文件操作", "堆操作", "注册表操作", "网络操作"]);
 let dataFilterList = $ref(["弹窗", "文件操作", "堆操作", "注册表操作", "网络操作"]);
 let isCheckAll = $ref(true);
 let onChooseAllChecked = () => {
     dataFilter = isCheckAll ? [] : dataFilterList;
 };
-
 let funcTypeMap = {
     "弹窗": ["MessageBoxA", "MessageBoxW"],
     "文件操作": ["CreateFileA", "WriteFile", "ReadFile", "CloseHandle"],
@@ -19,7 +19,6 @@ let funcTypeMap = {
     "注册表操作": ["RegCreateKeyEx", "RegOpenKeyEx", "RegSetValueEx", "RegCloseKey", "RegDeleteKey", "RegDeleteValue"],
     "网络操作": ["socket", "bind", "connect", "send", "recv", "close"],
 };
-
 let funTypeReverseMap = {};
 for (let key in funcTypeMap) {
     funcTypeMap[key].forEach(item => {
@@ -27,15 +26,15 @@ for (let key in funcTypeMap) {
     });
 }
 
+// 按威胁等级筛选
 let levelFilter = $ref(100);
-
 let marks = {
     0: "危险",
     50: "可疑",
     100: "全部",
 }
-
 let shouldShow = (message) => {
+    // 先判断威胁等级
     let level = 0;
     if (message?.tag?.type == "危险") {
         level = 0;
@@ -47,11 +46,12 @@ let shouldShow = (message) => {
     if (level > levelFilter) {
         return false;
     }
+    // 再判断类别
     return dataFilter.includes(funTypeReverseMap[message.funcName]);
 }
 
+// 详细信息模态框
 let showModal = $ref(false);
-
 let fileInfo = $ref({
     Name: "",
     Path: "",
@@ -59,14 +59,18 @@ let fileInfo = $ref({
     ModTime: "",
 });
 
+let infoByPidCache = {};
 let displayDetail = (message) => {
-    console.log(message);
     showModal = true;
     let pid = parseInt(message.pid);
-    GetFileInfoByPid(pid).then((res) => {
-        fileInfo = res;
-        console.log(res);
-    });
+    if (infoByPidCache[pid]) {
+        fileInfo = infoByPidCache[pid];
+    } else {
+        GetFileInfoByPid(pid).then((info) => {
+            infoByPidCache[pid] = info;
+            fileInfo = info;
+        });
+    }
 }
 
 </script>
@@ -108,7 +112,8 @@ let displayDetail = (message) => {
                     </template>
                     <div>pid: {{ message.pid }}</div>
                     <div class="paramBox flex flex-row flex-wrap divide-x divide-gray-400">
-                        <div v-for="param in message.params" :key="param" class="max-w-full break-all whitespace-pre-wrap">
+                        <div v-for="param in message.params" :key="param"
+                            class="max-w-full break-all whitespace-pre-wrap">
                             {{ param[0] }}: {{ param[1] }}
                         </div>
                     </div>
@@ -126,6 +131,9 @@ let displayDetail = (message) => {
                 </template>
                 <!-- 内容 -->
                 <n-tabs type="line">
+                    <n-tab-pane name="详情" tab="详情">
+                        暂无
+                    </n-tab-pane>
                     <n-tab-pane name="源程序" tab="源程序">
                         <div class="flex flex-row">
                             <div class="w-1/4">文件名:</div>
@@ -143,9 +151,6 @@ let displayDetail = (message) => {
                             <div class="w-1/4">修改时间:</div>
                             <div class="w-3/4">{{ fileInfo.modTime }}</div>
                         </div>
-                    </n-tab-pane>
-                    <n-tab-pane name="详情" tab="详情">
-                        暂无
                     </n-tab-pane>
                 </n-tabs>
             </n-card>

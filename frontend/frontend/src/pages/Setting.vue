@@ -10,7 +10,6 @@ import { Settings20Regular } from "@vicons/fluent";
             <span class="px-2">设置</span>
         </div>
     </div>
-
 </template>
 
 <style scoped>
