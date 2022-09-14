@@ -3,10 +3,16 @@
 #include <sstream>
 #include <string>
 #include <unordered_set>
+#include <map>
 #include "UDPClient/UDPClient.h"
 #include "Base64/base64.h"
 #include "detours.h"
 #include "Locale/Locale.h"
+#include "MD5/md5.h"
+
+MD5 md5;
+std::map <std::string, int> fileContentMap;
+
 
 static LONG heapCreateLock = 0;
 static LONG heapAllocLock = 0;
@@ -158,6 +164,11 @@ extern "C" __declspec(dllexport) BOOL
 WINAPI NewReadFile(HANDLE hFile, LPVOID lpBuffer, DWORD nNumberOfBytesToRead, LPDWORD lpNumberOfBytesRead,
                    LPOVERLAPPED lpOverlapped) {
     BOOL result = OldReadFile(hFile, lpBuffer, nNumberOfBytesToRead, lpNumberOfBytesRead, lpOverlapped);
+    // 将读取的内容进行md5后存入fileContentMap
+    char* md5Result;
+    md5Result = md5.digestMemory((BYTE*)lpBuffer, nNumberOfBytesToRead);
+    // 存入格式: <md5, 1>
+    fileContentMap[md5Result] = 1;
     // 截断lpBuffer
     std::string lpBufferUtf8 = GbkToUtf8((const char *) lpBuffer);
     std::ostringstream outputStringBuilder;
@@ -469,15 +480,33 @@ extern "C" __declspec(dllexport) int WINAPI NewSend(SOCKET s, const char *buf, i
     int result = OldSend(s, buf, len, flags);
     if (enableTracingSend == 1) {
         enableTracingSend = 0;
-        std::ostringstream outputStringBuilder;
-        outputStringBuilder << "pid\n" << GetCurrentProcessId()
-                            << "\nfuncName\n" << "send"
-                            << "\ns\n" << s
-                            << "\nbuf(base64)\n" << base64_encode((const unsigned char *) buf, len)
-                            << "\nlen\n" << len
-                            << "\nflags\n" << flags
-                            << "\nresult\n" << result;
-        sendUdpPacked(outputStringBuilder.str().c_str());
+        // 检查是否是从文件读取的数据(fileContentMap)
+        char *bufMd5 = md5.digestMemory((BYTE *) buf, len);
+        std::string bufMd5Str = bufMd5;
+        // 从fileContentMap中查找
+        auto iter = fileContentMap.find(bufMd5Str);
+        if (iter!= fileContentMap.end()) {
+            std::ostringstream outputStringBuilder;
+            outputStringBuilder << "pid\n" << GetCurrentProcessId()
+                                << "\nfuncName\n" << "send"
+                                << "\ns\n" << s << "(danger)"
+                                << "\nbuf(base64)\n" << base64_encode((const unsigned char *) buf, len)
+                                << "\nlen\n" << len
+                                << "\nflags\n" << flags
+                                << "\nresult\n" << result;
+            sendUdpPacked(outputStringBuilder.str().c_str());
+        }
+        else{
+            std::ostringstream outputStringBuilder;
+            outputStringBuilder << "pid\n" << GetCurrentProcessId()
+                                << "\nfuncName\n" << "send"
+                                << "\ns\n" << s
+                                << "\nbuf(base64)\n" << base64_encode((const unsigned char *) buf, len)
+                                << "\nlen\n" << len
+                                << "\nflags\n" << flags
+                                << "\nresult\n" << result;
+            sendUdpPacked(outputStringBuilder.str().c_str());
+        }
         enableTracingSend = 1;
     }
     return result;
