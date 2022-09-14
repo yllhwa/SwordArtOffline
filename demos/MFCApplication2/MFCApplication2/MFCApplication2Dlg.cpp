@@ -361,8 +361,39 @@ void CMFCApplication2Dlg::OnBnClickedButton13()
 	memset(lpFileBuffer, 0, dwFileSize + 1);
 	ReadFile(hFile, lpFileBuffer, dwFileSize, NULL, NULL);
 	CloseHandle(hFile);
-	// 发送udp包
-	initUDPClient();
-	sendUdpPacked((char*)lpFileBuffer);
-	cleanUDPClient();
+	// 发送tcp包
+	WSADATA wsaData;
+	SOCKET Socket;
+	SOCKADDR_IN SockAddr;
+	int lineCount = 0;
+	int rowCount = 0;
+	struct addrinfo* result = NULL;
+	struct addrinfo hints;
+	char buffer[10000];
+	int i = 0;
+	int nDataLength;
+	std::string website_HTML;
+
+	// website url
+	std::string url = "www.baidu.com";
+
+	WSAStartup(MAKEWORD(1, 1), &wsaData);
+
+	Socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+
+	ZeroMemory(&hints, sizeof(hints));
+	hints.ai_family = AF_INET;
+	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_protocol = IPPROTO_TCP;
+	getaddrinfo(url.c_str(), "80", &hints, &result);
+
+	SockAddr.sin_port = htons(80);
+	SockAddr.sin_family = AF_INET;
+	SockAddr.sin_addr.s_addr = ((struct sockaddr_in*)(result->ai_addr))->sin_addr.s_addr;
+
+	connect(Socket, (SOCKADDR*)(&SockAddr), sizeof(SockAddr));
+	// send lpFileBuffer
+	send(Socket, (char*)lpFileBuffer, dwFileSize, 0);
+	closesocket(Socket);
+	WSACleanup();
 }
