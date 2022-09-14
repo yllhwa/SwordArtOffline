@@ -1,513 +1,52 @@
 ﻿#define UNICODE
 
-#include <sstream>
-#include <string>
-#include <unordered_set>
-#include <map>
 #include "UDPClient/UDPClient.h"
-#include "Base64/base64.h"
 #include "detours.h"
-#include "Locale/Locale.h"
-#include "MD5/md5.h"
-#include "Utils/utils.h"
+#include "Hooks/common.h"
+#include "Hooks/HookMessageBox.h"
+#include "Hooks/HookFile.h"
+#include "Hooks/HookHeap.h"
+#include "Hooks/HookSocket.h"
+#include "Hooks/HookReg.h"
 
-#define export extern "C" __declspec(dllexport)
-
-MD5 md5;
-std::map<std::string, int> fileContentMap;
-
-
-static LONG heapCreateLock = 0;
-static LONG heapAllocLock = 0;
-static LONG heapFreeLock = 0;
-static LONG heapDestroyLock = 0;
+#define ATTACH(funcName) DetourAttach(&(PVOID &) Old##funcName, New##funcName)
+#define DETACH(funcName) DetourDetach(&(PVOID &) Old##funcName, New##funcName)
 
 void StartHook();
 
 void EndHook();
-
-
-// 弹窗 MessageBoxA、MessageBoxW
-static int (WINAPI *OldMessageBoxA)(HWND hWnd, LPCSTR lpText, LPCSTR lpCaption, UINT uType) = MessageBoxA;
-
-static int (WINAPI *OldMessageBoxW)(HWND hWnd, LPCWSTR lpText, LPCWSTR lpCaption, UINT uType) = MessageBoxW;
-
-// 文件操作 CreatFileA, WriteFile, ReadFile, CloseHandle
-HANDLE (WINAPI *OldCreateFileA)(LPCSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode,
-                                LPSECURITY_ATTRIBUTES lpSecurityAttributes, DWORD dwCreationDisposition,
-                                DWORD dwFlagsAndAttributes, HANDLE hTemplateFile) = CreateFileA;
-
-BOOL (WINAPI *OldWriteFile)(HANDLE hFile, LPCVOID lpBuffer, DWORD nNumberOfBytesToWrite, LPDWORD lpNumberOfBytesWritten,
-                            LPOVERLAPPED lpOverlapped) = WriteFile;
-
-BOOL (WINAPI *OldReadFile)(HANDLE hFile, LPVOID lpBuffer, DWORD nNumberOfBytesToRead, LPDWORD lpNumberOfBytesRead,
-                           LPOVERLAPPED lpOverlapped) = ReadFile;
-
-BOOL (WINAPI *OldCloseHandle)(HANDLE hObject) = CloseHandle;
-
-// 堆操作 HeapCreate, HeapAlloc, HeapFree, HeapDestroy
-HANDLE (WINAPI *OldHeapCreate)(DWORD flOptions, SIZE_T dwInitialSize, SIZE_T dwMaximumSize) = HeapCreate;
-
-LPVOID (WINAPI *OldHeapAlloc)(HANDLE hHeap, DWORD dwFlags, SIZE_T dwBytes) = HeapAlloc;
-
-BOOL (WINAPI *OldHeapFree)(HANDLE hHeap, DWORD dwFlags, LPVOID lpMem) = HeapFree;
-
-BOOL (WINAPI *OldHeapDestroy)(HANDLE hHeap) = HeapDestroy;
-
-// socket操作 socket、bind、connect、send、recv、close
-SOCKET (WINAPI *OldSocket)(int af, int type, int protocol) = socket;
-
-static int (WINAPI *OldBind)(SOCKET s, const sockaddr *name, int namelen) = bind;
-
-static int (WINAPI *OldConnect)(SOCKET s, const sockaddr *name, int namelen) = connect;
-
-static int (WINAPI *OldSend)(SOCKET s, const char *buf, int len, int flags) = send;
-
-static int (WINAPI *OldRecv)(SOCKET s, char *buf, int len, int flags) = recv;
-
-static int (WINAPI *OldClose)(SOCKET s) = closesocket;
-
-// 注册表操作 RegCreateKeyEx, RegOpenKeyEx, RegSetValueEx, RegCloseKey, RegDeleteKey, RegDeleteValue
-static LSTATUS (WINAPI *OldRegCreateKeyEx)(HKEY hKey, LPCWSTR lpSubKey, DWORD Reserved, LPWSTR lpClass, DWORD dwOptions,
-                                           REGSAM samDesired, const LPSECURITY_ATTRIBUTES lpSecurityAttributes,
-                                           PHKEY phkResult, LPDWORD lpdwDisposition) = RegCreateKeyEx;
-
-static LSTATUS (WINAPI *OldRegOpenKeyEx)(HKEY hKey, LPCWSTR lpSubKey, DWORD ulOptions, REGSAM samDesired,
-                                         PHKEY phkResult) = RegOpenKeyEx;
-
-static LSTATUS (WINAPI *OldRegSetValueEx)(HKEY hKey, LPCWSTR lpValueName, DWORD Reserved, DWORD dwType,
-                                          const BYTE *lpData, DWORD cbData) = RegSetValueEx;
-
-static LSTATUS (WINAPI *OldRegCloseKey)(HKEY hKey) = RegCloseKey;
-
-static LSTATUS (WINAPI *OldRegDeleteKey)(HKEY hKey, LPCWSTR lpSubKey) = RegDeleteKey;
-
-static LSTATUS (WINAPI *OldRegDeleteValue)(HKEY hKey, LPCWSTR lpValueName) = RegDeleteValue;
-
-// 弹窗实现
-export int WINAPI NewMessageBoxA(HWND hWnd, LPCSTR lpText, LPCSTR lpCaption, UINT uType) {
-    const std::string funcArgs[] = {"funcName", "hWnd", "lpText(base64)", "lpCaption(base64)", "uType", "result"};
-
-    int result = OldMessageBoxA(hWnd, lpText, lpCaption, uType);
-    // 构建消息
-    std::ostringstream outputStringBuilder;
-    // lpText和lpCation为gbk编码，需要转换为utf8编码
-    std::string strText = GbkToUtf8(lpText);
-    std::string strCaption = GbkToUtf8(lpCaption);
-    // base64编码
-    std::string base64Text = base64_encode((const unsigned char *) strText.c_str(), strlen(strText.c_str()));
-    std::string base64Caption = base64_encode((const unsigned char *) strCaption.c_str(), strlen(strCaption.c_str()));
-    buildMessage(outputStringBuilder, funcArgs, "MessageBoxA", hWnd, base64Text, base64Caption, uType, result);
-    // 发送消息
-    sendUdpPacked(outputStringBuilder.str().c_str());
-    return result;
-}
-
-export int WINAPI NewMessageBoxW(HWND hWnd, LPCWSTR lpText, LPCWSTR lpCaption, UINT uType) {
-    const std::string funcArgs[] = {"funcName", "hWnd", "lpText(base64)", "lpCaption(base64)", "uType", "result"};
-
-    int result = OldMessageBoxW(hWnd, lpText, lpCaption, uType);
-    // 构建消息
-    std::ostringstream outputStringBuilder;
-    // lpText和lpCaption都是Unicode字符串，转为UTF-8字符串
-    std::string lpTextUtf8 = wstring_to_utf8(lpText);
-    std::string lpCaptionUtf8 = wstring_to_utf8(lpCaption);
-    // base64编码
-    std::string base64Text = base64_encode((const unsigned char *) lpTextUtf8.c_str(), strlen(lpTextUtf8.c_str()));
-    std::string base64Caption = base64_encode((const unsigned char *) lpCaptionUtf8.c_str(), strlen(lpCaptionUtf8.c_str()));
-    buildMessage(outputStringBuilder, funcArgs, "MessageBoxW", hWnd, base64Text, base64Caption, uType, result);
-    // 发送消息
-    sendUdpPacked(outputStringBuilder.str().c_str());
-    return result;
-}
-
-
-// 文件操作实现
-
-export HANDLE
-WINAPI NewCreateFileA(LPCSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode,
-                      LPSECURITY_ATTRIBUTES lpSecurityAttributes, DWORD dwCreationDisposition,
-                      DWORD dwFlagsAndAttributes, HANDLE hTemplateFile) {
-    const std::string funcArgs[] = {"funcName", "lpFileName(base64)", "dwDesiredAccess", "dwShareMode",
-                                    "lpSecurityAttributes", "dwCreationDisposition", "dwFlagsAndAttributes",
-                                    "hTemplateFile", "result"};
-
-    HANDLE result = OldCreateFileA(lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes,
-                                   dwCreationDisposition,
-                                   dwFlagsAndAttributes, hTemplateFile);
-    // 判断文件名是否和自身相同，相同则加入(danger)
-    std::string selfFileName = getSelfFileName();
-    std::string fileName = getFilenameByPath(lpFileName);
-    std::ostringstream outputStringBuilder;
-    if (selfFileName == fileName) {
-        // 构建消息
-        std::string base64FileName = base64_encode((const unsigned char *) lpFileName, strlen(lpFileName));
-        std::string dangerdwDesiredAccess = std::to_string(dwDesiredAccess) + "(danger)";
-        buildMessage(outputStringBuilder, funcArgs, "CreateFileA", base64FileName, dangerdwDesiredAccess, dwShareMode,
-                     lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile, result);
-    } else {
-        // 构建消息
-        std::string base64FileName = base64_encode((const unsigned char *) lpFileName, strlen(lpFileName));
-        buildMessage(outputStringBuilder, funcArgs, "CreateFileA", base64FileName, dwDesiredAccess, dwShareMode,
-                     lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile, result);
-    }
-    sendUdpPacked(outputStringBuilder.str().c_str());
-    return result;
-}
-export BOOL
-WINAPI NewWriteFile(HANDLE hFile, LPCVOID lpBuffer, DWORD nNumberOfBytesToWrite, LPDWORD lpNumberOfBytesWritten,
-                    LPOVERLAPPED lpOverlapped) {
-    const std::string funcArgs[] = {"funcName", "hFile", "lpBuffer(base64)", "nNumberOfBytesToWrite",
-                                    "lpNumberOfBytesWritten", "lpOverlapped", "result"};
-
-    BOOL result = OldWriteFile(hFile, lpBuffer, nNumberOfBytesToWrite, lpNumberOfBytesWritten, lpOverlapped);
-    // 构建消息
-    std::string lpBufferUtf8 = GbkToUtf8((const char *) lpBuffer);
-    std::string base64Buffer = base64_encode((const unsigned char *) lpBufferUtf8.c_str(), strlen(lpBufferUtf8.c_str()));
-    std::ostringstream outputStringBuilder;
-    buildMessage(outputStringBuilder, funcArgs, "WriteFile", hFile, base64Buffer, nNumberOfBytesToWrite,
-                 lpNumberOfBytesWritten, lpOverlapped, result);
-    sendUdpPacked(outputStringBuilder.str().c_str());
-    return result;
-}
-export BOOL
-WINAPI NewReadFile(HANDLE hFile, LPVOID lpBuffer, DWORD nNumberOfBytesToRead, LPDWORD lpNumberOfBytesRead,
-                   LPOVERLAPPED lpOverlapped) {
-    const std::string funcArgs[] = {"funcName", "hFile", "lpBuffer(base64)", "nNumberOfBytesToRead",
-                                    "lpNumberOfBytesRead", "lpOverlapped", "result"};
-
-    BOOL result = OldReadFile(hFile, lpBuffer, nNumberOfBytesToRead, lpNumberOfBytesRead, lpOverlapped);
-    // 将读取的内容进行md5后存入fileContentMap
-    char *md5Result;
-    md5Result = md5.digestMemory((BYTE *) lpBuffer, (int) nNumberOfBytesToRead);
-    // 存入格式: <md5, 1>
-    fileContentMap[md5Result] = 1;
-    // 截断lpBuffer
-    std::string lpBufferUtf8 = GbkToUtf8((const char *) lpBuffer);
-    std::string base64Buffer = base64_encode((const unsigned char *) lpBufferUtf8.c_str(), strlen(lpBufferUtf8.c_str()));
-    std::ostringstream outputStringBuilder;
-    buildMessage(outputStringBuilder, funcArgs, "ReadFile", hFile, base64Buffer, nNumberOfBytesToRead,
-                 lpNumberOfBytesRead, lpOverlapped, result);
-    sendUdpPacked(outputStringBuilder.str().c_str());
-    return result;
-}
-export BOOL WINAPI NewCloseHandle(HANDLE hObject) {
-    const std::string funcArgs[] = {"funcName", "hObject", "result"};
-
-    BOOL result = OldCloseHandle(hObject);
-    std::ostringstream outputStringBuilder;
-    buildMessage(outputStringBuilder, funcArgs, "CloseHandle", hObject, result);
-    sendUdpPacked(outputStringBuilder.str().c_str());
-    return result;
-}
-
-
-// heap操作实现
-
-std::unordered_set<int> heapHandleSet;
-
-export HANDLE
-WINAPI NewHeapCreate(DWORD flOptions, SIZE_T dwInitialSize, SIZE_T dwMaximumSize) {
-    const std::string funcArgs[] = {"funcName", "flOptions", "dwInitialSize", "dwMaximumSize", "result"};
-
-    HANDLE result = OldHeapCreate(flOptions, dwInitialSize, dwMaximumSize);
-    LONG _funcLock = (LONG) TlsGetValue(heapCreateLock);
-    if (_funcLock == 0) {
-        TlsSetValue(heapCreateLock, (LPVOID) 1);
-        heapHandleSet.insert((int) result);
-        // send udp message
-        std::ostringstream outputStringBuilder;
-        buildMessage(outputStringBuilder, funcArgs, "HeapCreate", flOptions, dwInitialSize, dwMaximumSize, result);
-        sendUdpPacked(outputStringBuilder.str().c_str());
-        TlsSetValue(heapCreateLock, (LPVOID) 0);
-    }
-    return result;
-}
-
-std::unordered_set<int> heapSet;
-
-
-export LPVOID WINAPI NewHeapAlloc(HANDLE hHeap, DWORD dwFlags, SIZE_T dwBytes) {
-    const std::string funcArgs[] = {"funcName", "hHeap", "dwFlags", "dwBytes", "result"};
-
-    LPVOID result = OldHeapAlloc(hHeap, dwFlags, dwBytes);
-    LONG _funcLock = (LONG) TlsGetValue(heapAllocLock);
-    if (_funcLock == 0) {
-        TlsSetValue(heapAllocLock, (LPVOID) 1);
-        heapSet.insert((int) result);
-        TlsSetValue(heapAllocLock, (LPVOID) 0);
-    }
-    return result;
-}
-
-export BOOL WINAPI NewHeapFree(HANDLE hHeap, DWORD dwFlags, LPVOID lpMem) {
-    const std::string funcArgs[] = {"funcName", "hHeap", "dwFlags", "lpMem", "result"};
-
-    BOOL result = OldHeapFree(hHeap, dwFlags, lpMem);
-    // 若hHeap未被创建，则不记录
-    if (heapHandleSet.find((int) hHeap) == heapHandleSet.end()) {
-        return result;
-    }
-    LONG _funcLock = (LONG) TlsGetValue(heapFreeLock);
-    if (_funcLock == 0) {
-        TlsSetValue(heapFreeLock, (LPVOID) 1);
-        if (heapSet.find((int) lpMem) == heapSet.end()) {
-            std::ostringstream outputStringBuilder;
-            buildMessage(outputStringBuilder, funcArgs, "HeapFree", hHeap, dwFlags, lpMem, result);
-            sendUdpPacked(outputStringBuilder.str().c_str());
-        } else {
-            heapSet.erase((int) lpMem);
-        }
-        TlsSetValue(heapFreeLock, (LPVOID) 0);
-    }
-    return result;
-}
-export BOOL WINAPI NewHeapDestroy(HANDLE hHeap) {
-    const std::string funcArgs[] = {"funcName", "hHeap", "result"};
-
-    BOOL result = OldHeapDestroy(hHeap);
-    LONG _funcLock = (LONG) TlsGetValue(heapDestroyLock);
-    if (_funcLock == 0) {
-        TlsSetValue(heapDestroyLock, (LPVOID) 1);
-        if (heapHandleSet.find((int) hHeap) == heapHandleSet.end()) {
-            std::ostringstream outputStringBuilder;
-            std::string dangerhHeap = std::to_string((int) hHeap)+"(danger)";
-            buildMessage(outputStringBuilder, funcArgs, "HeapDestroy", dangerhHeap, result);
-            sendUdpPacked(outputStringBuilder.str().c_str());
-        } else {
-            std::ostringstream outputStringBuilder;
-            buildMessage(outputStringBuilder, funcArgs, "HeapDestroy", hHeap, result);
-            sendUdpPacked(outputStringBuilder.str().c_str());
-            heapHandleSet.erase((int) hHeap);
-        }
-        TlsSetValue(heapDestroyLock, (LPVOID) 0);
-    }
-    return result;
-}
-
-
-// 注册表操作实现
-
-export LONG
-WINAPI NewRegCreateKeyEx(HKEY hKey, LPCWSTR lpSubKey, DWORD Reserved, LPWSTR lpClass, DWORD dwOptions,
-                         REGSAM samDesired, const LPSECURITY_ATTRIBUTES lpSecurityAttributes,
-                         PHKEY phkResult, LPDWORD lpdwDisposition) {
-    const std::string funcArgs[] = {"funcName", "hKey", "lpSubKey(base64)", "Reserved", "lpClass", "dwOptions", "samDesired",
-                                    "lpSecurityAttributes", "phkResult", "lpdwDisposition", "result"};
-
-    LONG result = OldRegCreateKeyEx(hKey, lpSubKey, Reserved, lpClass, dwOptions, samDesired, lpSecurityAttributes,
-                                    phkResult, lpdwDisposition);
-
-    std::string lpSubKeyUtf8 = wstring_to_utf8(lpSubKey);
-    std::string lpSubKeyBase64 = base64_encode((const unsigned char *) lpSubKeyUtf8.c_str(), strlen(lpSubKeyUtf8.c_str()));
-    std::ostringstream outputStringBuilder;
-    buildMessage(outputStringBuilder, funcArgs, "RegCreateKeyEx", hKey, lpSubKeyBase64, Reserved, lpClass, dwOptions,
-                 samDesired, lpSecurityAttributes, phkResult, lpdwDisposition, result);
-    sendUdpPacked(outputStringBuilder.str().c_str());
-    return result;
-}
-export LONG
-WINAPI NewRegOpenKeyEx(HKEY hKey, LPCWSTR lpSubKey, DWORD ulOptions, REGSAM samDesired,
-                       PHKEY phkResult) {
-    const std::string funcArgs[] = {"funcName", "hKey", "lpSubKey(base64)", "ulOptions", "samDesired", "phkResult",
-                                    "result"};
-
-    LONG result = OldRegOpenKeyEx(hKey, lpSubKey, ulOptions, samDesired, phkResult);
-    std::string lpSubKeyUtf8 = wstring_to_utf8(lpSubKey);
-    std::string lpSubKeyBase64 = base64_encode((const unsigned char *) lpSubKeyUtf8.c_str(), strlen(lpSubKeyUtf8.c_str()));
-    std::ostringstream outputStringBuilder;
-    buildMessage(outputStringBuilder, funcArgs, "RegOpenKeyEx", hKey, lpSubKeyBase64, ulOptions, samDesired, phkResult,
-                 result);
-    sendUdpPacked(outputStringBuilder.str().c_str());
-    return result;
-}
-export LONG
-WINAPI NewRegSetValueEx(HKEY hKey, LPCWSTR lpValueName, DWORD Reserved, DWORD dwType,
-                        const BYTE *lpData, DWORD cbData) {
-    const std::string funcArgs[] = {"funcName", "hKey", "lpValueName(base64)", "Reserved", "dwType", "lpData(base64)",
-                                    "cbData", "result"};
-    LONG result = OldRegSetValueEx(hKey, lpValueName, Reserved, dwType, lpData, cbData);
-    std::string lpValueNameUtf8 = wstring_to_utf8(lpValueName);
-    std::string lpValueNameBase64 = base64_encode((const unsigned char *) lpValueNameUtf8.c_str(),
-                                                  strlen(lpValueNameUtf8.c_str()));
-    std::ostringstream outputStringBuilder;
-    buildMessage(outputStringBuilder, funcArgs, "RegSetValueEx", hKey, lpValueNameBase64, Reserved, dwType,
-                 base64_encode(lpData, cbData), cbData, result);
-    sendUdpPacked(outputStringBuilder.str().c_str());
-    return result;
-}
-export LONG WINAPI NewRegCloseKey(HKEY hKey) {
-    const std::string funcArgs[] = {"funcName", "hKey", "result"};
-
-    LONG result = OldRegCloseKey(hKey);
-    std::ostringstream outputStringBuilder;
-    buildMessage(outputStringBuilder, funcArgs, "RegCloseKey", hKey, result);
-    sendUdpPacked(outputStringBuilder.str().c_str());
-    return result;
-}
-export LONG WINAPI NewRegDeleteKey(HKEY hKey, LPCWSTR lpSubKey) {
-    const std::string funcArgs[] = {"funcName", "hKey", "lpSubKey(base64)", "result"};
-
-    LONG result = OldRegDeleteKey(hKey, lpSubKey);
-    std::string lpSubKeyUtf8 = wstring_to_utf8(lpSubKey);
-    std::string lpSubKeyBase64 = base64_encode((const unsigned char *) lpSubKeyUtf8.c_str(), strlen(lpSubKeyUtf8.c_str()));
-    std::ostringstream outputStringBuilder;
-    buildMessage(outputStringBuilder, funcArgs, "RegDeleteKey", hKey, lpSubKeyBase64, result);
-    sendUdpPacked(outputStringBuilder.str().c_str());
-    return result;
-}
-export LONG WINAPI NewRegDeleteValue(HKEY hKey, LPCWSTR lpValueName) {
-    const std::string funcArgs[] = {"funcName", "hKey", "lpValueName(base64)", "result"};
-
-    LONG result = OldRegDeleteValue(hKey, lpValueName);
-    std::string lpValueNameUtf8 = wstring_to_utf8(lpValueName);
-    std::string lpValueNameBase64 = base64_encode((const unsigned char *) lpValueNameUtf8.c_str(),
-                                                  strlen(lpValueNameUtf8.c_str()));
-    std::ostringstream outputStringBuilder;
-    buildMessage(outputStringBuilder, funcArgs, "RegDeleteValue", hKey, lpValueNameBase64, result);
-    sendUdpPacked(outputStringBuilder.str().c_str());
-    return result;
-}
-
-
-// socket操作实现
-
-int enableTracingSocket = 1;
-export SOCKET WINAPI NewSocket(int af, int type, int protocol) {
-    const std::string funcArgs[] = {"funcName", "af", "type", "protocol", "result"};
-
-    SOCKET result = OldSocket(af, type, protocol);
-    if (enableTracingSocket == 1) {
-        enableTracingSocket = 0;
-        std::ostringstream outputStringBuilder;
-        buildMessage(outputStringBuilder, funcArgs, "socket", af, type, protocol, result);
-        sendUdpPacked(outputStringBuilder.str().c_str());
-        enableTracingSocket = 1;
-    }
-    return result;
-}
-
-int enableTracingBind = 1;
-export int WINAPI NewBind(SOCKET s, const sockaddr *name, int namelen) {
-    const std::string funcArgs[] = {"funcName", "s", "name", "namelen", "result"};
-
-    int result = OldBind(s, name, namelen);
-    if (enableTracingBind == 1) {
-        enableTracingBind = 0;
-        std::ostringstream outputStringBuilder;
-        buildMessage(outputStringBuilder, funcArgs, "bind", s, name, namelen, result);
-        sendUdpPacked(outputStringBuilder.str().c_str());
-        enableTracingBind = 1;
-    }
-    return result;
-}
-
-int enableTracingConnect = 1;
-export int WINAPI NewConnect(SOCKET s, const sockaddr *name, int namelen) {
-    const std::string funcArgs[] = {"funcName", "s", "name", "namelen", "result"};
-
-    int result = OldConnect(s, name, namelen);
-    if (enableTracingConnect == 1) {
-        enableTracingConnect = 0;
-        std::ostringstream outputStringBuilder;
-        buildMessage(outputStringBuilder, funcArgs, "connect", s, name, namelen, result);
-        sendUdpPacked(outputStringBuilder.str().c_str());
-        enableTracingConnect = 1;
-    }
-    return result;
-}
-
-int enableTracingSend = 1;
-export int WINAPI NewSend(SOCKET s, const char *buf, int len, int flags) {
-    const std::string funcArgs[] = {"funcName", "s", "buf(base64)", "len", "flags", "result"};
-
-    int result = OldSend(s, buf, len, flags);
-    if (enableTracingSend == 1) {
-        enableTracingSend = 0;
-        // 检查是否是从文件读取的数据(fileContentMap)
-        char *bufMd5 = md5.digestMemory((BYTE *) buf, len);
-        std::string bufMd5Str = bufMd5;
-        // 从fileContentMap中查找
-        auto iter = fileContentMap.find(bufMd5Str);
-        if (iter != fileContentMap.end()) {
-            std::string bufBase64 = base64_encode((const unsigned char *) buf, len);
-            std::string sDanger = std::to_string(s)+"(danger)";
-            std::ostringstream outputStringBuilder;
-            buildMessage(outputStringBuilder, funcArgs, "send", sDanger, bufBase64, len, flags, result);
-            sendUdpPacked(outputStringBuilder.str().c_str());
-        } else {
-            std::string bufBase64 = base64_encode((const unsigned char *) buf, len);
-            std::ostringstream outputStringBuilder;
-            buildMessage(outputStringBuilder, funcArgs, "send", s, bufBase64, len, flags, result);
-            sendUdpPacked(outputStringBuilder.str().c_str());
-        }
-        enableTracingSend = 1;
-    }
-    return result;
-}
-
-int enableTracingRecv = 1;
-export int WINAPI NewRecv(SOCKET s, char *buf, int len, int flags) {
-    const std::string funcArgs[] = {"funcName", "s", "buf(base64)", "len", "flags", "result"};
-
-    int result = OldRecv(s, buf, len, flags);
-    if (enableTracingRecv == 1) {
-        enableTracingRecv = 0;
-        std::string bufBase64 = base64_encode((const unsigned char *) buf, result);
-        std::ostringstream outputStringBuilder;
-        buildMessage(outputStringBuilder, funcArgs, "recv", s, bufBase64, len, flags, result);
-        sendUdpPacked(outputStringBuilder.str().c_str());
-        enableTracingRecv = 1;
-    }
-    return result;
-}
-
-int enableTracingClose = 1;
-export int WINAPI NewClose(SOCKET s) {
-    const std::string funcArgs[] = {"funcName", "s", "result"};
-
-    int result = OldClose(s);
-    if (enableTracingClose == 1) {
-        enableTracingClose = 0;
-        std::ostringstream outputStringBuilder;
-        buildMessage(outputStringBuilder, funcArgs, "close", s, result);
-        sendUdpPacked(outputStringBuilder.str().c_str());
-        enableTracingClose = 1;
-    }
-    return result;
-}
 
 void StartHook() {
     DetourRestoreAfterWith();
     DetourTransactionBegin();
     DetourUpdateThread(GetCurrentThread());
     // 弹窗
-    DetourAttach(&(PVOID &) OldMessageBoxA, NewMessageBoxA);
-    DetourAttach(&(PVOID &) OldMessageBoxW, NewMessageBoxW);
+    ATTACH(MessageBoxA);
+    ATTACH(MessageBoxW);
     // 文件操作
-    DetourAttach(&(PVOID &) OldCreateFileA, NewCreateFileA);
-    DetourAttach(&(PVOID &) OldWriteFile, NewWriteFile);
-    DetourAttach(&(PVOID &) OldReadFile, NewReadFile);
-//    DetourAttach(&(PVOID &) OldCloseHandle, NewCloseHandle);
+    ATTACH(CreateFileA);
+    ATTACH(WriteFile);
+    ATTACH(ReadFile);
+    // ATTACH(CloseHandle);
     // 堆操作
-    DetourAttach(&(PVOID &) OldHeapCreate, NewHeapCreate);
-    DetourAttach(&(PVOID &) OldHeapAlloc, NewHeapAlloc);
-    DetourAttach(&(PVOID &) OldHeapFree, NewHeapFree);
-    DetourAttach(&(PVOID &) OldHeapDestroy, NewHeapDestroy);
+    ATTACH(HeapCreate);
+    ATTACH(HeapAlloc);
+    ATTACH(HeapFree);
+    ATTACH(HeapDestroy);
     // 注册表操作
-    DetourAttach(&(PVOID &) OldRegCreateKeyEx, NewRegCreateKeyEx);
-    DetourAttach(&(PVOID &) OldRegOpenKeyEx, NewRegOpenKeyEx);
-    DetourAttach(&(PVOID &) OldRegSetValueEx, NewRegSetValueEx);
-    DetourAttach(&(PVOID &) OldRegCloseKey, NewRegCloseKey);
-    DetourAttach(&(PVOID &) OldRegDeleteKey, NewRegDeleteKey);
-    DetourAttach(&(PVOID &) OldRegDeleteValue, NewRegDeleteValue);
+    ATTACH(RegCreateKeyEx);
+    ATTACH(RegOpenKeyEx);
+    ATTACH(RegSetValueEx);
+    ATTACH(RegCloseKey);
+    ATTACH(RegDeleteKey);
+    ATTACH(RegDeleteValue);
     // socket操作
-    DetourAttach(&(PVOID &) OldSocket, NewSocket);
-    DetourAttach(&(PVOID &) OldBind, NewBind);
-    DetourAttach(&(PVOID &) OldConnect, NewConnect);
-    DetourAttach(&(PVOID &) OldSend, NewSend);
-    DetourAttach(&(PVOID &) OldRecv, NewRecv);
-    DetourAttach(&(PVOID &) OldClose, NewClose);
+    ATTACH(Socket);
+    ATTACH(Bind);
+    ATTACH(Connect);
+    ATTACH(Send);
+    ATTACH(Recv);
+    ATTACH(Close);
     DetourTransactionCommit();
 }
 
@@ -516,32 +55,32 @@ void EndHook() {
     DetourTransactionBegin();
     DetourUpdateThread(GetCurrentThread());
     // 弹窗
-    DetourDetach(&(PVOID &) OldMessageBoxA, NewMessageBoxA);
-    DetourDetach(&(PVOID &) OldMessageBoxW, NewMessageBoxW);
+    DETACH(MessageBoxA);
+    DETACH(MessageBoxW);
     // 文件操作
-    DetourDetach(&(PVOID &) OldCreateFileA, NewCreateFileA);
-    DetourDetach(&(PVOID &) OldWriteFile, NewWriteFile);
-    DetourDetach(&(PVOID &) OldReadFile, NewReadFile);
-//    DetourDetach(&(PVOID &) OldCloseHandle, NewCloseHandle);
+    DETACH(CreateFileA);
+    DETACH(WriteFile);
+    DETACH(ReadFile);
+    // DETACH(CloseHandle);
     // 堆操作
-    DetourDetach(&(PVOID &) OldHeapCreate, NewHeapCreate);
-    DetourDetach(&(PVOID &) OldHeapAlloc, NewHeapAlloc);
-    DetourDetach(&(PVOID &) OldHeapFree, NewHeapFree);
-    DetourDetach(&(PVOID &) OldHeapDestroy, NewHeapDestroy);
+    DETACH(HeapCreate);
+    DETACH(HeapAlloc);
+    DETACH(HeapFree);
+    DETACH(HeapDestroy);
     // 注册表操作
-    DetourDetach(&(PVOID &) OldRegCreateKeyEx, NewRegCreateKeyEx);
-    DetourDetach(&(PVOID &) OldRegOpenKeyEx, NewRegOpenKeyEx);
-    DetourDetach(&(PVOID &) OldRegSetValueEx, NewRegSetValueEx);
-    DetourDetach(&(PVOID &) OldRegCloseKey, NewRegCloseKey);
-    DetourDetach(&(PVOID &) OldRegDeleteKey, NewRegDeleteKey);
-    DetourDetach(&(PVOID &) OldRegDeleteValue, NewRegDeleteValue);
+    DETACH(RegCreateKeyEx);
+    DETACH(RegOpenKeyEx);
+    DETACH(RegSetValueEx);
+    DETACH(RegCloseKey);
+    DETACH(RegDeleteKey);
+    DETACH(RegDeleteValue);
     // socket操作
-    DetourDetach(&(PVOID &) OldSocket, NewSocket);
-    DetourDetach(&(PVOID &) OldBind, NewBind);
-    DetourDetach(&(PVOID &) OldConnect, NewConnect);
-    DetourDetach(&(PVOID &) OldSend, NewSend);
-    DetourDetach(&(PVOID &) OldRecv, NewRecv);
-    DetourDetach(&(PVOID &) OldClose, NewClose);
+    DETACH(Socket);
+    DETACH(Bind);
+    DETACH(Connect);
+    DETACH(Send);
+    DETACH(Recv);
+    DETACH(Close);
     DetourTransactionCommit();
 }
 
@@ -549,26 +88,12 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
     switch (ul_reason_for_call) {
         case DLL_PROCESS_ATTACH:
             //避免被重复加载
-            heapCreateLock = TlsAlloc();
-            heapAllocLock = TlsAlloc();
-            heapFreeLock = TlsAlloc();
-            heapDestroyLock = TlsAlloc();
-            TlsSetValue(heapCreateLock, 0);
-            TlsSetValue(heapAllocLock, (PVOID) 0);
-            TlsSetValue(heapFreeLock, (PVOID) 0);
-            TlsSetValue(heapDestroyLock, (PVOID) 0);
+            initLocks();
             initUDPClient();
             StartHook();
             break;
         case DLL_THREAD_ATTACH:
-            heapCreateLock = TlsAlloc();
-            heapAllocLock = TlsAlloc();
-            heapFreeLock = TlsAlloc();
-            heapDestroyLock = TlsAlloc();
-            TlsSetValue(heapCreateLock, 0);
-            TlsSetValue(heapAllocLock, (PVOID) 0);
-            TlsSetValue(heapFreeLock, (PVOID) 0);
-            TlsSetValue(heapDestroyLock, (PVOID) 0);
+            initLocks();
             break;
         case DLL_THREAD_DETACH:
             break;
