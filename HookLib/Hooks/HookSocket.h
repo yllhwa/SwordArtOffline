@@ -61,6 +61,23 @@ _export int WINAPI NewBind(SOCKET s, const sockaddr *name, int namelen) {
     return result;
 }
 
+std::string sockaddrToString(const sockaddr *name) {
+    std::string result;
+    if (name->sa_family == AF_INET) {
+        auto *addr = (sockaddr_in *) name;
+        result = inet_ntoa(addr->sin_addr);
+    } else if (name->sa_family == AF_INET6) {
+        auto *addr = (sockaddr_in6 *) name;
+        char ip[INET6_ADDRSTRLEN];
+        inet_ntop(AF_INET6, &addr->sin6_addr, ip, INET6_ADDRSTRLEN);
+        result = ip;
+    }
+    // 端口
+    result += ":";
+    result += std::to_string(ntohs(((sockaddr_in *) name)->sin_port));
+    return result;
+}
+
 int enableTracingConnect = 1;
 _export int WINAPI NewConnect(SOCKET s, const sockaddr *name, int namelen) {
     const std::string funcArgs[] = {"funcName", "s", "name", "namelen", "result"};
@@ -69,7 +86,9 @@ _export int WINAPI NewConnect(SOCKET s, const sockaddr *name, int namelen) {
     if (enableTracingConnect == 1) {
         enableTracingConnect = 0;
         std::ostringstream outputStringBuilder;
-        buildMessage(outputStringBuilder, funcArgs, "connect", s, name, namelen, result);
+        // 将sockaddr转化为目的地址
+        std::string destAddr = sockaddrToString(name);
+        buildMessage(outputStringBuilder, funcArgs, "connect", s, destAddr, namelen, result);
         sendUdpPacked(outputStringBuilder.str().c_str());
         enableTracingConnect = 1;
     }

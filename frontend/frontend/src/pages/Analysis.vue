@@ -4,6 +4,7 @@ import { NTabs, NTabPane } from 'naive-ui';
 import { DataPie20Regular, Dismiss20Regular } from '@vicons/fluent';
 import { store } from '../store.js';
 import { GetFileInfoByPid } from '../../wailsjs/go/main/App'
+import { getConclusionByMessage } from '../utils.js';
 
 // 按类别筛选
 let dataFilter = $ref(["弹窗", "文件操作", "堆操作", "注册表操作", "网络操作"]);
@@ -58,6 +59,7 @@ let fileInfo = $ref({
     Size: 0,
     ModTime: "",
 });
+let funcDetailInfo = $ref({});
 
 let infoByPidCache = {};
 let displayDetail = (message) => {
@@ -71,6 +73,7 @@ let displayDetail = (message) => {
             fileInfo = info;
         });
     }
+    funcDetailInfo = message;
 }
 
 </script>
@@ -89,11 +92,10 @@ let displayDetail = (message) => {
                         :label="datafilter" />
                 </n-space>
             </n-checkbox-group>
-            <div class="mt-2 w-1/2">
+            <div class="mt-2 w-1/5">
                 危险等级
                 <n-slider :marks="marks" step="mark" :tooltip="false" v-model:value="levelFilter" />
             </div>
-
         </n-card>
         <n-list hoverable clickable bordered class="overflow-auto">
             <n-list-item v-for="message in store.analysisData.slice().reverse()" :key="message"
@@ -110,18 +112,19 @@ let displayDetail = (message) => {
                             <span>{{ message.tag.message }}</span>
                         </n-space>
                     </template>
-                    <div>pid: {{ message.pid }}</div>
-                    <div class="paramBox flex flex-row flex-wrap divide-x divide-gray-400">
+                    <div>{{ getConclusionByMessage(message) }}</div>
+                    <!-- <div>pid: {{ message.pid }}</div> -->
+                    <!-- <div class="paramBox flex flex-row flex-wrap divide-x divide-gray-400">
                         <div v-for="param in message.params" :key="param"
                             class="max-w-full break-all whitespace-pre-wrap">
                             {{ param[0] }}: {{ param[1] }}
                         </div>
-                    </div>
-                    <div>返回: {{ message.result }}</div>
+                    </div> -->
+                    <!-- <div>返回: {{ message.result }}</div> -->
                 </n-thing>
             </n-list-item>
         </n-list>
-        <n-modal v-model:show="showModal" transform-origin="center">
+        <n-modal v-model:show="showModal" transform-origin="center" class="mx-10">
             <n-card style="width: 600px" title="详细信息" :bordered="true" size="huge" role="dialog" aria-modal="true">
                 <template #header-extra>
                     <div class="hover:bg-red-400 hover:text-white flex flex-row items-center cursor-pointer"
@@ -132,10 +135,45 @@ let displayDetail = (message) => {
                 <!-- 内容 -->
                 <n-tabs type="line">
                     <n-tab-pane name="详情" tab="详情">
-                        暂无
+                        <table class="table-auto">
+                            <tbody>
+                                <tr class="py-2">
+                                    <td class="pr-6 whitespace-nowrap">函数名:</td>
+                                    <td>{{ funcDetailInfo.funcName }}</td>
+                                </tr>
+                                <tr class="py-2">
+                                    <td class="pr-6 whitespace-nowrap">返回值:</td>
+                                    <td>{{ funcDetailInfo.result }}</td>
+                                </tr>
+                                <tr class="py-2" v-for="param in funcDetailInfo.params" :key="param">
+                                    <td class="pr-6 whitespace-nowrap">{{ param[0] }}:</td>
+                                    <td class="whitespace-pre-wrap">{{ param[1] }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </n-tab-pane>
                     <n-tab-pane name="源程序" tab="源程序">
-                        <div class="flex flex-row">
+                        <table class="table-auto">
+                            <tbody>
+                                <tr class="py-2">
+                                    <td class="pr-3">文件名:</td>
+                                    <td>{{ fileInfo.name }}</td>
+                                </tr>
+                                <tr class="py-2">
+                                    <td class="pr-3">路径:</td>
+                                    <td>{{ fileInfo.path }}</td>
+                                </tr>
+                                <tr class="py-2">
+                                    <td class="pr-3">大小:</td>
+                                    <td>{{ fileInfo.size }}字节</td>
+                                </tr>
+                                <tr class="py-2">
+                                    <td class="pr-3">修改时间:</td>
+                                    <td>{{ fileInfo.modTime }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <!-- <div class="flex flex-row">
                             <div class="w-1/4">文件名:</div>
                             <div class="w-3/4">{{ fileInfo.name }}</div>
                         </div>
@@ -150,7 +188,7 @@ let displayDetail = (message) => {
                         <div class="flex flex-row">
                             <div class="w-1/4">修改时间:</div>
                             <div class="w-3/4">{{ fileInfo.modTime }}</div>
-                        </div>
+                        </div> -->
                     </n-tab-pane>
                 </n-tabs>
             </n-card>
@@ -158,7 +196,7 @@ let displayDetail = (message) => {
     </div>
 </template>
 
-<style scoped>
+<style>
 .paramBox div:first-child {
     @apply pr-2;
 }
@@ -173,5 +211,19 @@ let displayDetail = (message) => {
 
 #fileInfoPath ::-webkit-scrollbar {
     display: none;
+}
+
+.n-modal,
+.n-modal>.n-card-header,
+.n-modal>.n-card__content {
+    width: 1000px !important;
+    max-width: 90vw !important;
+    max-height: 95vh !important;
+    /* @apply overflow-x-hidden overflow-y-auto; */
+}
+
+.n-tab-pane {
+    max-height: 60vh !important;
+    @apply overflow-x-hidden overflow-y-auto;
 }
 </style>

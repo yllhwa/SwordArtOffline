@@ -49,7 +49,7 @@ WINAPI NewRegCreateKeyEx(HKEY hKey, LPCWSTR lpSubKey, DWORD Reserved, LPWSTR lpC
                                                strlen(lpSubKeyUtf8.c_str()));
     std::ostringstream outputStringBuilder;
     buildMessage(outputStringBuilder, funcArgs, "RegCreateKeyEx", hKey, lpSubKeyBase64, Reserved, lpClass, dwOptions,
-                 samDesired, lpSecurityAttributes, phkResult, lpdwDisposition, result);
+                 samDesired, lpSecurityAttributes, *phkResult, lpdwDisposition, result);
     sendUdpPacked(outputStringBuilder.str().c_str());
     return result;
 }
@@ -64,7 +64,7 @@ WINAPI NewRegOpenKeyEx(HKEY hKey, LPCWSTR lpSubKey, DWORD ulOptions, REGSAM samD
     std::string lpSubKeyBase64 = base64_encode((const unsigned char *) lpSubKeyUtf8.c_str(),
                                                strlen(lpSubKeyUtf8.c_str()));
     std::ostringstream outputStringBuilder;
-    buildMessage(outputStringBuilder, funcArgs, "RegOpenKeyEx", hKey, lpSubKeyBase64, ulOptions, samDesired, phkResult,
+    buildMessage(outputStringBuilder, funcArgs, "RegOpenKeyEx", hKey, lpSubKeyBase64, ulOptions, samDesired, *phkResult,
                  result);
     sendUdpPacked(outputStringBuilder.str().c_str());
     return result;
@@ -78,9 +78,11 @@ WINAPI NewRegSetValueEx(HKEY hKey, LPCWSTR lpValueName, DWORD Reserved, DWORD dw
     std::string lpValueNameUtf8 = wstring_to_utf8(lpValueName);
     std::string lpValueNameBase64 = base64_encode((const unsigned char *) lpValueNameUtf8.c_str(),
                                                   strlen(lpValueNameUtf8.c_str()));
+    std::string lpDataUtf8 = wstring_to_utf8((LPCWSTR) lpData);
+    std::string lpDataBase64 = base64_encode((const unsigned char *) lpDataUtf8.c_str(),
+                                             strlen(lpDataUtf8.c_str()));
     std::ostringstream outputStringBuilder;
-    buildMessage(outputStringBuilder, funcArgs, "RegSetValueEx", hKey, lpValueNameBase64, Reserved, dwType,
-                 base64_encode(lpData, cbData), cbData, result);
+    buildMessage(outputStringBuilder, funcArgs, "RegSetValueEx", hKey, lpValueNameBase64, Reserved, dwType, lpDataBase64, cbData, result);
     sendUdpPacked(outputStringBuilder.str().c_str());
     return result;
 }

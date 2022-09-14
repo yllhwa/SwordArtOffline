@@ -39,19 +39,24 @@ WINAPI NewCreateFileA(LPCSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMod
     HANDLE result = OldCreateFileA(lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes,
                                    dwCreationDisposition,
                                    dwFlagsAndAttributes, hTemplateFile);
-// 判断文件名是否和自身相同，相同则加入(danger)
+    // 判断文件名是否和自身相同，相同则加入(danger)
     std::string selfFileName = getSelfFileName();
     std::string fileName = getFilenameByPath(lpFileName);
     std::ostringstream outputStringBuilder;
     if (selfFileName == fileName) {
-// 构建消息
-        std::string base64FileName = base64_encode((const unsigned char *) lpFileName, strlen(lpFileName));
+        // 构建消息
+        // lpFileName为gbk编码，需要转换为utf8
+        std::string utf8FileName = GbkToUtf8(lpFileName);
+        std::string base64FileName = base64_encode((const unsigned char *) utf8FileName.c_str(), strlen(utf8FileName.c_str()));
         std::string dangerdwDesiredAccess = std::to_string(dwDesiredAccess) + "(danger)";
+
         buildMessage(outputStringBuilder, funcArgs, "CreateFileA", base64FileName, dangerdwDesiredAccess, dwShareMode,
                      lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile, result);
     } else {
-// 构建消息
-        std::string base64FileName = base64_encode((const unsigned char *) lpFileName, strlen(lpFileName));
+        // 构建消息
+        // lpFileName为gbk编码，需要转换为utf8
+        std::string utf8FileName = GbkToUtf8(lpFileName);
+        std::string base64FileName = base64_encode((const unsigned char *) utf8FileName.c_str(), strlen(utf8FileName.c_str()));
         buildMessage(outputStringBuilder, funcArgs, "CreateFileA", base64FileName, dwDesiredAccess, dwShareMode,
                      lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile, result);
     }

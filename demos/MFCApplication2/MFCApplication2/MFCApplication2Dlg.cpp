@@ -222,8 +222,8 @@ void CMFCApplication2Dlg::OnBnClickedButton6()
 SOCKET sockClient;
 SOCKADDR_IN addrSrv;
 void sendUdpPacked(const char* buffer) {
-	send(sockClient, buffer, strlen(buffer), 0);
-	// sendto(sockClient, buffer, (int)strlen(buffer), 0, (SOCKADDR*)&addrSrv, sizeof(SOCKADDR));
+	//send(sockClient, buffer, strlen(buffer), 0);
+	sendto(sockClient, buffer, (int)strlen(buffer), 0, (SOCKADDR*)&addrSrv, sizeof(SOCKADDR));
 }
 
 int initUDPClient() {
