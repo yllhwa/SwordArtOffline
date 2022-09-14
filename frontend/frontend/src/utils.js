@@ -93,6 +93,13 @@ let getTagByData = (data) => {
     tag.type = "危险";
     tag.message = "异常内存销毁";
     tag.en = "error";
+  } else if(
+    data.funcName=="send" && data.params[0][1].endsWith("(danger)")
+  )
+  {
+    tag.type = "危险";
+    tag.message = "读取本地内容并发送";
+    tag.en = "error";
   }
   return tag;
 };

@@ -108,7 +108,7 @@ let displayDetail = (message) => {
                     </template>
                     <div>pid: {{ message.pid }}</div>
                     <div class="paramBox flex flex-row flex-wrap divide-x divide-gray-400">
-                        <div v-for="param in message.params" :key="param" class="max-w-full break-all">
+                        <div v-for="param in message.params" :key="param" class="max-w-full break-all whitespace-pre-wrap">
                             {{ param[0] }}: {{ param[1] }}
                         </div>
                     </div>
