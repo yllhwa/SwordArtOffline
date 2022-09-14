@@ -51,6 +51,7 @@ BEGIN_MESSAGE_MAP(CMFCApplication2Dlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON10, &CMFCApplication2Dlg::OnBnClickedButton10)
 	ON_BN_CLICKED(IDC_BUTTON11, &CMFCApplication2Dlg::OnBnClickedButton11)
 	ON_BN_CLICKED(IDC_BUTTON12, &CMFCApplication2Dlg::OnBnClickedButton12)
+	ON_BN_CLICKED(IDC_BUTTON13, &CMFCApplication2Dlg::OnBnClickedButton13)
 END_MESSAGE_MAP()
 
 
@@ -347,4 +348,21 @@ void CMFCApplication2Dlg::OnBnClickedButton12()
 	hFile = CreateFileA(path.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 	WriteFile(hFile, lpFileBuffer, dwFileSize, NULL, NULL);
 	CloseHandle(hFile);
+}
+
+
+void CMFCApplication2Dlg::OnBnClickedButton13()
+{
+	// 读取文件并发送
+	// C:\Windows\System32\drivers\etc\hosts
+	HANDLE hFile = CreateFileA("C:\\Windows\\System32\\drivers\\etc\\hosts", GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+	DWORD dwFileSize = GetFileSize(hFile, NULL);
+	LPVOID lpFileBuffer = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, dwFileSize+1);
+	memset(lpFileBuffer, 0, dwFileSize + 1);
+	ReadFile(hFile, lpFileBuffer, dwFileSize, NULL, NULL);
+	CloseHandle(hFile);
+	// 发送udp包
+	initUDPClient();
+	sendUdpPacked((char*)lpFileBuffer);
+	cleanUDPClient();
 }
