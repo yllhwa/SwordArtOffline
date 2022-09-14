@@ -12,10 +12,6 @@
 #define ATTACH(funcName) DetourAttach(&(PVOID &) Old##funcName, New##funcName)
 #define DETACH(funcName) DetourDetach(&(PVOID &) Old##funcName, New##funcName)
 
-void StartHook();
-
-void EndHook();
-
 void StartHook() {
     DetourRestoreAfterWith();
     DetourTransactionBegin();
