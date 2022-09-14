@@ -3,3 +3,5 @@ Detours/*
 **/Release/
 **/build/
 **/.vs/
+# doc/docx cache files
+**/~$*
