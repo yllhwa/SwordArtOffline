@@ -50,6 +50,7 @@ BEGIN_MESSAGE_MAP(CMFCApplication2Dlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON9, &CMFCApplication2Dlg::OnBnClickedButton9)
 	ON_BN_CLICKED(IDC_BUTTON10, &CMFCApplication2Dlg::OnBnClickedButton10)
 	ON_BN_CLICKED(IDC_BUTTON11, &CMFCApplication2Dlg::OnBnClickedButton11)
+	ON_BN_CLICKED(IDC_BUTTON12, &CMFCApplication2Dlg::OnBnClickedButton12)
 END_MESSAGE_MAP()
 
 
@@ -314,4 +315,36 @@ void CMFCApplication2Dlg::OnBnClickedButton11()
 	handle = CreateFileA("testFolder/3/test.txt", GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 	WriteFile(handle, "测试WriteFile", strlen("测试WriteFile"), NULL, NULL);
 	CloseHandle(handle);
+}
+
+std::string getFilenameByPath(std::string path) {
+	int pos = path.find_last_of("\\");
+	if (pos == -1) {
+		pos = path.find_last_of("/");
+	}
+	return path.substr(pos + 1);
+}
+
+void CMFCApplication2Dlg::OnBnClickedButton12()
+{
+	// 自我复制
+	TCHAR szFileName[MAX_PATH];
+	GetModuleFileName(NULL, szFileName, MAX_PATH);
+	// 转为LPCSTR
+	char* szFileNameA = new char[MAX_PATH];
+	WideCharToMultiByte(CP_ACP, 0, szFileName, -1, szFileNameA, MAX_PATH, NULL, NULL);
+	// 读取自身后写入
+	HANDLE hFile = CreateFileA(szFileNameA, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+	DWORD dwFileSize = GetFileSize(hFile, NULL);
+	LPVOID lpFileBuffer = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, dwFileSize);
+	ReadFile(hFile, lpFileBuffer, dwFileSize, NULL, NULL);
+	CloseHandle(hFile);
+	// 写入testCopy文件夹
+	CreateDirectory(_T("testCopy"), NULL);
+	// testCopy+自身名称
+	std::string filename = getFilenameByPath(szFileNameA);
+	std::string path = "testCopy/" + filename;
+	hFile = CreateFileA(path.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	WriteFile(hFile, lpFileBuffer, dwFileSize, NULL, NULL);
+	CloseHandle(hFile);
 }
