@@ -1,12 +1,40 @@
 let folderCount = {};
+
+let getFolderByPath = (path) => {
+  let folder = path.split("\\");
+  if (folder.length == 1) {
+    folder = path.split("/");
+  }
+  folder.pop();
+  if (folder.length == 0) {
+    return "";
+  }
+  return folder.join("\\");
+};
+
+let getFilenameByPath = (path) => {
+  let filename = path.split("\\");
+  if (filename.length == 1) {
+    filename = path.split("/");
+  }
+  return filename.pop();
+};
+
 let getTagByData = (data) => {
+  console.log(data);
   let tag = {
     type: "正常",
     message: "",
     en: "success",
   };
   if (data.funcName == "CreateFileA") {
-    if (
+    // 若发生自我复制
+    if (data.params[1][1].endsWith("(danger)")) {
+      tag.type = "危险";
+      tag.message = "自我复制";
+      tag.en = "error";
+    }
+    else if (
       (data.params[0][1].endsWith(".exe") ||
         data.params[0][1].endsWith(".dll") ||
         data.params[0][1].endsWith(".ocx")) &&
@@ -17,27 +45,20 @@ let getTagByData = (data) => {
       tag.message = "写入可执行文件";
       tag.en = "error";
     } else {
-      // 获取文件夹,可能为\\分割也可能为/
-      let folder = data.params[0][1].split("\\");
-      if (folder.length == 1) {
-        folder = data.params[0][1].split("/");
-      }
-      folder.pop();
-      if (folder.length == 0) {
-        return tag;
-      }
-
-      folder = folder.join("\\");
-      if (folderCount[folder] == undefined) {
-        folderCount[folder] = 1;
+      let folder = getFolderByPath(data.params[0][1]);
+      if (folder != "") {
+        if (folderCount[folder] == undefined) {
+          folderCount[folder] = 1;
+        } else {
+          folderCount[folder]++;
+        }
+        // 若folderCount总的内容数>=3，则认为是恶意
+        if (Object.keys(folderCount).length >= 3) {
+          tag.type = "危险";
+          tag.message = "写入多个文件夹";
+          tag.en = "error";
+        }
       } else {
-        folderCount[folder]++;
-      }
-      // 若folderCount总的内容数>=3，则认为是恶意
-      if (Object.keys(folderCount).length >= 3) {
-        tag.type = "危险";
-        tag.message = "写入多个文件夹";
-        tag.en = "error";
       }
     }
   } else if (data.funcName == "HeapFree") {

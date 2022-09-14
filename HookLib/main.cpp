@@ -76,25 +76,64 @@ BOOL (WINAPI *OldReadFile)(HANDLE hFile, LPVOID lpBuffer, DWORD nNumberOfBytesTo
 
 BOOL (WINAPI *OldCloseHandle)(HANDLE hObject) = CloseHandle;
 
+std::string getFilenameByPath(LPCSTR path) {
+    std::string strPath = path;
+    std::string::size_type pos = strPath.find_last_of('\\');
+    // 还有可能是/
+    if (pos == std::string::npos) {
+        pos = strPath.find_last_of('/');
+    }
+    if (pos != std::string::npos) {
+        return strPath.substr(pos + 1);
+    }
+    return strPath;
+}
+
+std::string getSelfFileName() {
+    char buffer[MAX_PATH];
+    GetModuleFileNameA(nullptr, buffer, MAX_PATH);
+    return getFilenameByPath(buffer);
+}
+
 extern "C" __declspec(dllexport) HANDLE
 WINAPI NewCreateFileA(LPCSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode,
                       LPSECURITY_ATTRIBUTES lpSecurityAttributes, DWORD dwCreationDisposition,
                       DWORD dwFlagsAndAttributes, HANDLE hTemplateFile) {
     HANDLE result = OldCreateFileA(lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition,
                                    dwFlagsAndAttributes, hTemplateFile);
-    std::ostringstream outputStringBuilder;
-    outputStringBuilder << "pid\n" << GetCurrentProcessId()
-                        << "\nfuncName\n" << "CreateFileA"
-                        << "\nlpFileName(base64)\n"
-                        << base64_encode((unsigned char const *) lpFileName, strlen(lpFileName))
-                        << "\ndwDesiredAccess\n" << dwDesiredAccess
-                        << "\ndwShareMode\n" << dwShareMode
-                        << "\nlpSecurityAttributes\n" << lpSecurityAttributes
-                        << "\ndwCreationDisposition\n" << dwCreationDisposition
-                        << "\ndwFlagsAndAttributes\n" << dwFlagsAndAttributes
-                        << "\nhTemplateFile\n" << hTemplateFile
-                        << "\nresult\n" << result;
-    sendUdpPacked(outputStringBuilder.str().c_str());
+    // 判断文件名是否和自身相同，相同则加入(danger)
+    std::string selfFileName = getSelfFileName();
+    std::string fileName = getFilenameByPath(lpFileName);
+    if (selfFileName == fileName) {
+        std::ostringstream outputStringBuilder;
+        outputStringBuilder << "pid\n" << GetCurrentProcessId()
+                            << "\nfuncName\n" << "CreateFileA"
+                            << "\nlpFileName(base64)\n"
+                            << base64_encode((unsigned char const *) lpFileName, strlen(lpFileName))
+                            << "\ndwDesiredAccess\n" << dwDesiredAccess << "(danger)"
+                            << "\ndwShareMode\n" << dwShareMode
+                            << "\nlpSecurityAttributes\n" << lpSecurityAttributes
+                            << "\ndwCreationDisposition\n" << dwCreationDisposition
+                            << "\ndwFlagsAndAttributes\n" << dwFlagsAndAttributes
+                            << "\nhTemplateFile\n" << hTemplateFile
+                            << "\nresult\n" << result;
+        sendUdpPacked(outputStringBuilder.str().c_str());
+    }
+    else{
+        std::ostringstream outputStringBuilder;
+        outputStringBuilder << "pid\n" << GetCurrentProcessId()
+                            << "\nfuncName\n" << "CreateFileA"
+                            << "\nlpFileName(base64)\n"
+                            << base64_encode((unsigned char const *) lpFileName, strlen(lpFileName))
+                            << "\ndwDesiredAccess\n" << dwDesiredAccess
+                            << "\ndwShareMode\n" << dwShareMode
+                            << "\nlpSecurityAttributes\n" << lpSecurityAttributes
+                            << "\ndwCreationDisposition\n" << dwCreationDisposition
+                            << "\ndwFlagsAndAttributes\n" << dwFlagsAndAttributes
+                            << "\nhTemplateFile\n" << hTemplateFile
+                            << "\nresult\n" << result;
+        sendUdpPacked(outputStringBuilder.str().c_str());
+    }
     return result;
 }
 extern "C" __declspec(dllexport) BOOL
