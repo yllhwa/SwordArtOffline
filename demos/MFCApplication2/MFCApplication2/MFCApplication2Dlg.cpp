@@ -49,6 +49,7 @@ BEGIN_MESSAGE_MAP(CMFCApplication2Dlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON8, &CMFCApplication2Dlg::OnBnClickedButton8)
 	ON_BN_CLICKED(IDC_BUTTON9, &CMFCApplication2Dlg::OnBnClickedButton9)
 	ON_BN_CLICKED(IDC_BUTTON10, &CMFCApplication2Dlg::OnBnClickedButton10)
+	ON_BN_CLICKED(IDC_BUTTON11, &CMFCApplication2Dlg::OnBnClickedButton11)
 END_MESSAGE_MAP()
 
 
@@ -293,4 +294,24 @@ void CMFCApplication2Dlg::OnBnClickedButton10()
 	HeapFree(handle, 0, lpMem);
 	HeapDestroy(handle);
 	HeapDestroy(0);
+}
+
+
+void CMFCApplication2Dlg::OnBnClickedButton11()
+{
+	// 创建testFolder文件夹
+	CreateDirectory(_T("testFolder"), NULL);
+	CreateDirectory(_T("testFolder\\1"), NULL);
+	CreateDirectory(_T("testFolder\\2"), NULL);
+	CreateDirectory(_T("testFolder\\3"), NULL);
+	
+	HANDLE handle = CreateFileA("testFolder/1/test.txt", GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	WriteFile(handle, "测试WriteFile", strlen("测试WriteFile"), NULL, NULL);
+	CloseHandle(handle);
+	handle = CreateFileA("testFolder/2/test.txt", GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	WriteFile(handle, "测试WriteFile", strlen("测试WriteFile"), NULL, NULL);
+	CloseHandle(handle);
+	handle = CreateFileA("testFolder/3/test.txt", GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	WriteFile(handle, "测试WriteFile", strlen("测试WriteFile"), NULL, NULL);
+	CloseHandle(handle);
 }
