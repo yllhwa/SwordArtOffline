@@ -94,6 +94,7 @@ let displayDetail = (message) => {
         <n-list hoverable clickable bordered class="overflow-auto">
             <n-list-item v-for="message in store.analysisData.slice().reverse()" :key="message"
                 v-show="shouldShow(message)" @click="displayDetail(message)">
+                <!-- style="content-visibility: auto;contain-intrinsic-size:130px" -->
                 <n-thing content-style="margin-top: 10px;">
                     <template #description>
                         <n-space size="small" style="margin-top: 4px"
@@ -124,7 +125,7 @@ let displayDetail = (message) => {
                     </div>
                 </template>
                 <!-- 内容 -->
-                <n-tabs type="line" >
+                <n-tabs type="line">
                     <n-tab-pane name="源程序" tab="源程序">
                         <div class="flex flex-row">
                             <div class="w-1/4">文件名:</div>
@@ -164,7 +165,8 @@ let displayDetail = (message) => {
 .paramBox div:not(:first-child):not(:last-child) {
     @apply px-2;
 }
-#fileInfoPath ::-webkit-scrollbar{
+
+#fileInfoPath ::-webkit-scrollbar {
     display: none;
 }
 </style>
