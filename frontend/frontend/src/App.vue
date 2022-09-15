@@ -4,7 +4,7 @@ import { Home20Regular, DataPie20Regular, Settings20Regular } from "@vicons/flue
 import { NConfigProvider } from 'naive-ui';
 import { EventsOn } from "../wailsjs/runtime";
 import { Base64 } from 'js-base64';
-import { getTagByData } from "./utils.js";
+import { getTagByData, getConclusionByMessage } from "./utils.js";
 import { store } from "./store.js";
 const themeOverrides = {
   common: {
@@ -41,6 +41,7 @@ EventsOn('udpMessage', (data) => {
       Base64.decode(dataArr[dataArr.length - 1]) : dataArr[dataArr.length - 1]
   };
   _data.tag = getTagByData(_data);
+  _data.conclusion = getConclusionByMessage(_data);
   // 删除params中携带的`(danger)`
   _data.params = _data.params.map(param => {
     if (param[1].includes('(danger)')) {

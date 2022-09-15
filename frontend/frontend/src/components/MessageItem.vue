@@ -1,5 +1,4 @@
 <script setup>
-import { getConclusionByMessage } from '../utils.js';
 import { NSpace, NThing, NTag, NCard } from 'naive-ui';
 const props = defineProps({
     index: { // index of current item
@@ -38,7 +37,7 @@ const props = defineProps({
                     <span>{{ source.tag.message }}</span>
                 </n-space>
             </template>
-            <div>{{ getConclusionByMessage(source) }}</div>
+            <div>{{ source.conclusion }}</div>
         </n-thing>
     </n-card>
 </template>
