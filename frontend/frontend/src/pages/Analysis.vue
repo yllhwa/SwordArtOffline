@@ -4,7 +4,6 @@ import { NTabs, NTabPane } from 'naive-ui';
 import { DataPie20Regular, Dismiss20Regular } from '@vicons/fluent';
 import { store } from '../store.js';
 import { GetFileInfoByPid } from '../../wailsjs/go/main/App'
-import { getConclusionByMessage } from '../utils.js';
 import VirtualList from 'vue3-virtual-scroll-list';
 import MessageItem from "../components/MessageItem.vue";
 
@@ -99,7 +98,7 @@ let displayDetail = (message) => {
                 <n-slider :marks="marks" step="mark" :tooltip="false" v-model:value="levelFilter" />
             </div>
         </n-card>
-        <virtual-list style="overflow-y: auto;" :data-key="'id'" :data-sources="store.analysisData.slice().reverse()" estimate-size="111"
+        <virtual-list style="overflow-y: auto;" :data-key="'id'" :data-sources="store.analysisData.slice().reverse()" :estimate-size="111"
             :data-component="MessageItem" :extra-props="{ shouldShow: shouldShow, displayDetail: displayDetail }" />
         <n-modal v-model:show="showModal" transform-origin="center" class="mx-10">
             <n-card style="width: 600px" title="详细信息" :bordered="true" size="huge" role="dialog" aria-modal="true">

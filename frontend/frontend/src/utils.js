@@ -161,98 +161,123 @@ let socketOperationCache = {};
   }
 */
 // 通过传入的信息获取一句简短的总结供展示
-let getConclusionByMessage = (message) => {
+let setConclusionByMessage = (message) => {
+  let tag = {
+    type: "正常",
+    message: "",
+    en: "success",
+  };
   switch (message.funcName) {
     case "MessageBoxA":
     case "MessageBoxW":
-      return `弹出对话框，标题为[${message.params[2][1]}]，内容为[${message.params[1][1]}]`;
+      message.conclusion = `弹出对话框，标题为[${message.params[2][1]}]，内容为[${message.params[1][1]}]`;
+      break;
     case "CreateFileA":
       fileOperationCache[message.result] = {
         filename: message.params[0][1],
         mode: getFileModeBydwDesiredAccess(message.params[1][1]),
         operation: [],
       };
-      return `打开文件[${
+      message.conclusion = `打开文件[${
         message.params[0][1]
       }]，打开模式为[${getFileModeBydwDesiredAccess(message.params[1][1])}]`;
+      break;
     case "WriteFile":
       if (fileOperationCache[message.params[0][1]] != undefined) {
         fileOperationCache[message.params[0][1]].operation.push(
           `写入[${message.params[2][1]}]字节`
         );
       }
-      return `写入文件[${
+      message.conclusion = `写入文件[${
         fileOperationCache[message.params[0][1]]?.filename
       }]，共[${message.params[2][1]}]字节`;
+      break;
     case "ReadFile":
       if (fileOperationCache[message.params[0][1]] != undefined) {
         fileOperationCache[message.params[0][1]].operation.push(`读取文件`);
       }
-      return `读取文件[${fileOperationCache[message.params[0][1]]?.filename}]`;
+      message.conclusion = `读取文件[${
+        fileOperationCache[message.params[0][1]]?.filename
+      }]`;
+      break;
     case "HeapCreate":
       heapOperationCache[message.result] = {
         operation: [],
       };
-      return `创建堆，堆初始大小为[${message.params[1][1]}]，堆最大大小为[${message.params[2][1]}]`;
+      message.conclusion = `创建堆，堆初始大小为[${message.params[1][1]}]，堆最大大小为[${message.params[2][1]}]`;
+      break;
     case "HeapAlloc":
       if (heapOperationCache[message.params[0][1]] != undefined) {
         heapOperationCache[message.params[0][1]].operation.push(
           `分配[${message.params[2][1]}]字节，地址为[${message.result}]`
         );
       }
-      return `在堆[${message.params[0][1]}]中分配[${message.params[2][1]}]字节`;
+      message.conclusion = `在堆[${message.params[0][1]}]中分配[${message.params[2][1]}]字节`;
+      break;
     case "HeapFree":
       if (heapOperationCache[message.params[0][1]] != undefined) {
         heapOperationCache[message.params[0][1]].operation.push(
           `释放[${message.params[2][1]}]字节，地址为[${message.params[1][1]}]`
         );
       }
-      return `释放堆[${message.params[0][1]}]中的内存[${message.params[1][1]}]`;
+      message.conclusion = `释放堆[${message.params[0][1]}]中的内存[${message.params[1][1]}]`;
+      break;
     case "HeapDestroy":
       if (heapOperationCache[message.params[0][1]] != undefined) {
         heapOperationCache[message.params[0][1]].operation.push(`销毁堆`);
       }
-      return `销毁堆[${message.params[0][1]}]`;
+      message.conclusion = `销毁堆[${message.params[0][1]}]`;
+      break;
     case "RegCreateKeyEx":
       regOperationCache[message.params[7][1]] = {
         path: message.params[1][1],
         operation: [],
       };
-      return `创建注册表键[${message.params[1][1]}]`;
+      message.conclusion = `创建注册表键[${message.params[1][1]}]`;
+      break;
     case "RegOpenKeyEx":
       regOperationCache[message.params[4][1]] = {
         path: message.params[1][1],
         operation: [],
       };
-      return `打开注册表键[${message.params[1][1]}]`;
+      message.conclusion = `打开注册表键[${message.params[1][1]}]`;
+      break;
     case "RegSetValueEx":
       if (regOperationCache[message.params[0][1]] != undefined) {
         regOperationCache[message.params[0][1]].operation.push(
           `设置键值[${message.params[1][1]}]为[${message.params[4][1]}]`
         );
       }
-      return `设置注册表键[${
+      message.conclusion = `设置注册表键[${
         regOperationCache[message.params[0][1]]?.path
       }]的键值[${message.params[1][1]}]为[${message.params[4][1]}]`;
+      break;
     case "RegCloseKey":
       if (regOperationCache[message.params[0][1]] != undefined) {
         regOperationCache[message.params[0][1]].operation.push(`关闭注册表键`);
       }
-      return `关闭注册表键[${regOperationCache[message.params[0][1]]?.path}]`;
+      message.conclusion = `关闭注册表键[${
+        regOperationCache[message.params[0][1]]?.path
+      }]`;
+      break;
     case "RegDeleteKey":
       if (regOperationCache[message.params[0][1]] != undefined) {
         regOperationCache[message.params[0][1]].operation.push(`删除注册表键`);
       }
-      return `删除注册表键[${regOperationCache[message.params[0][1]]?.path}]`;
+      message.conclusion = `删除注册表键[${
+        regOperationCache[message.params[0][1]]?.path
+      }]`;
+      break;
     case "RegDeleteValue":
       if (regOperationCache[message.params[0][1]] != undefined) {
         regOperationCache[message.params[0][1]].operation.push(
           `删除键值[${message.params[1][1]}]`
         );
       }
-      return `删除注册表键[${
+      message.conclusion = `删除注册表键[${
         regOperationCache[message.params[0][1]]?.path
       }]的键值[${message.params[1][1]}]`;
+      break;
     case "socket":
       const socketType = {
         1: "SOCK_STREAM",
@@ -268,7 +293,8 @@ let getConclusionByMessage = (message) => {
         addr: "",
         operation: [],
       };
-      return `创建套接字，协议为[${protocol}]`;
+      message.conclusion = `创建套接字，协议为[${protocol}]`;
+      break;
     case "connect":
       if (socketOperationCache[message.params[0][1]] != undefined) {
         socketOperationCache[message.params[0][1]].operation.push(
@@ -276,7 +302,8 @@ let getConclusionByMessage = (message) => {
         );
         socketOperationCache[message.params[0][1]].addr = message.params[1][1];
       }
-      return `连接套接字[${message.params[0][1]}]到[${message.params[1][1]}]`;
+      message.conclusion = `连接套接字[${message.params[0][1]}]到[${message.params[1][1]}]`;
+      break;
     case "bind":
       if (socketOperationCache[message.params[0][1]] != undefined) {
         socketOperationCache[message.params[0][1]].operation.push(
@@ -284,7 +311,8 @@ let getConclusionByMessage = (message) => {
         );
         socketOperationCache[message.params[0][1]].addr = message.params[1][1];
       }
-      return `绑定套接字[${message.params[0][1]}]到[${message.params[1][1]}]`;
+      message.conclusion = `绑定套接字[${message.params[0][1]}]到[${message.params[1][1]}]`;
+      break;
     case "send":
       if (socketOperationCache[message.params[0][1]] != undefined) {
         socketOperationCache[message.params[0][1]].operation.push(
@@ -293,26 +321,29 @@ let getConclusionByMessage = (message) => {
           }]`
         );
       }
-      return `发送[${message.params[2][1]}]字节数据到地址[${
+      message.conclusion = `发送[${message.params[2][1]}]字节数据到地址[${
         socketOperationCache[message.params[0][1]]?.addr
       }]`;
+      break;
     case "recv":
       if (socketOperationCache[message.params[0][1]] != undefined) {
         socketOperationCache[message.params[0][1]].operation.push(
           `接收[${message.params[2][1]}]字节数据`
         );
       }
-      return `从地址[${socketOperationCache[message.params[0][1]]?.addr}]接收[${
-        message.params[2][1]
-      }]字节数据`;
+      message.conclusion = `从地址[${
+        socketOperationCache[message.params[0][1]]?.addr
+      }]接收[${message.params[2][1]}]字节数据`;
+      break;
     case "close":
       if (socketOperationCache[message.params[0][1]] != undefined) {
         socketOperationCache[message.params[0][1]].operation.push(`关闭套接字`);
       }
-      return `关闭套接字[${message.params[0][1]}]`;
+      message.conclusion = `关闭套接字[${message.params[0][1]}]`;
+      break;
     default:
-      return ``;
+      message.conclusion = ``;
   }
 };
 
-export { getTagByData, getConclusionByMessage };
+export { getTagByData, setConclusionByMessage };
