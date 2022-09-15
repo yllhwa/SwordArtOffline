@@ -5,6 +5,8 @@ import { DataPie20Regular, Dismiss20Regular } from '@vicons/fluent';
 import { store } from '../store.js';
 import { GetFileInfoByPid } from '../../wailsjs/go/main/App'
 import { getConclusionByMessage } from '../utils.js';
+import VirtualList from 'vue3-virtual-scroll-list';
+import MessageItem from "../components/MessageItem.vue";
 
 // 按类别筛选
 let dataFilter = $ref(["弹窗", "文件操作", "堆操作", "注册表操作", "网络操作"]);
@@ -97,33 +99,8 @@ let displayDetail = (message) => {
                 <n-slider :marks="marks" step="mark" :tooltip="false" v-model:value="levelFilter" />
             </div>
         </n-card>
-        <n-list hoverable clickable bordered class="overflow-auto">
-            <n-list-item v-for="message in store.analysisData.slice().reverse()" :key="message"
-                v-show="shouldShow(message)" @click="displayDetail(message)">
-                <!-- style="content-visibility: auto;contain-intrinsic-size:130px" -->
-                <n-thing content-style="margin-top: 10px;">
-                    <template #description>
-                        <n-space size="small" style="margin-top: 4px"
-                            :class="{ 'text-red-500': message.tag.en == 'error' }">
-                            <span class="text-base font-medium">{{ message.funcName }}</span>
-                            <n-tag :bordered="false" :type="message.tag.en" size="small">
-                                {{ message.tag.type }}
-                            </n-tag>
-                            <span>{{ message.tag.message }}</span>
-                        </n-space>
-                    </template>
-                    <div>{{ getConclusionByMessage(message) }}</div>
-                    <!-- <div>pid: {{ message.pid }}</div> -->
-                    <!-- <div class="paramBox flex flex-row flex-wrap divide-x divide-gray-400">
-                        <div v-for="param in message.params" :key="param"
-                            class="max-w-full break-all whitespace-pre-wrap">
-                            {{ param[0] }}: {{ param[1] }}
-                        </div>
-                    </div> -->
-                    <!-- <div>返回: {{ message.result }}</div> -->
-                </n-thing>
-            </n-list-item>
-        </n-list>
+        <virtual-list style="overflow-y: auto;" :data-key="'id'" :data-sources="store.analysisData.slice().reverse()" estimate-size="111"
+            :data-component="MessageItem" :extra-props="{ shouldShow: shouldShow, displayDetail: displayDetail }" />
         <n-modal v-model:show="showModal" transform-origin="center" class="mx-10">
             <n-card style="width: 600px" title="详细信息" :bordered="true" size="huge" role="dialog" aria-modal="true">
                 <template #header-extra>

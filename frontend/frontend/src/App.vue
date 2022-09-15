@@ -48,6 +48,7 @@ EventsOn('udpMessage', (data) => {
     }
     return param;
   });
+  _data.id = store.analysisData.length;
   store.analysisData.push(_data);
 });
 </script>
