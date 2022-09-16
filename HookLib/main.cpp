@@ -8,6 +8,7 @@
 #include "Hooks/HookHeap.h"
 #include "Hooks/HookSocket.h"
 #include "Hooks/HookReg.h"
+#include "Hooks/HookMem.h"
 
 #define ATTACH(funcName) DetourAttach(&(PVOID &) Old##funcName, New##funcName)
 #define DETACH(funcName) DetourDetach(&(PVOID &) Old##funcName, New##funcName)
@@ -43,6 +44,8 @@ void StartHook() {
     ATTACH(Send);
     ATTACH(Recv);
     ATTACH(Close);
+    // 内存操作
+    ATTACH(Memcpy);
     DetourTransactionCommit();
 }
 
@@ -77,6 +80,8 @@ void EndHook() {
     DETACH(Send);
     DETACH(Recv);
     DETACH(Close);
+    // 内存操作
+    DETACH(Memcpy);
     DetourTransactionCommit();
 }
 

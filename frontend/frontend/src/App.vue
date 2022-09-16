@@ -50,6 +50,11 @@ EventsOn('udpMessage', (data) => {
         break;
     }
   }
+  // 若为memcpy则单独处理
+  if (_data.funcName == "memcpy") {
+    store.memCacheData.push(_data);
+    return;
+  }
   setTagByData(_data);
   setConclusionByMessage(_data);
   _data.id = store.analysisData.length;
