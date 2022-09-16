@@ -56,7 +56,6 @@ EventsOn('udpMessage', (data) => {
   // 若为memcpy则单独处理
   if (_data.funcName == "memcpy") {
     store.memCacheData.push(_data);
-    console.log("get", store.memCacheData);
     return;
   }
   setTagByData(_data);
