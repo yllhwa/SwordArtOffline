@@ -361,4 +361,94 @@ let setConclusionByMessage = (message) => {
   }
 };
 
-export { setTagByData, setConclusionByMessage };
+let getFileOperationCacheByHandle = (handle) => {
+  return fileOperationCache[handle];
+};
+
+let getRegOperationCacheByHandle = (handle) => {
+  return regOperationCache[handle];
+};
+
+let getSocketOperationCacheByHandle = (handle) => {
+  return socketOperationCache[handle];
+};
+
+let shouldShowTrack = (message) => {
+  // 文件操作、注册表操作、套接字操作
+  const funcNames = [
+    "CreateFileA",
+    "WriteFile",
+    "ReadFile",
+    "CloseHandle",
+    "RegCreateKeyEx",
+    "RegOpenKeyEx",
+    "RegSetValueEx",
+    "RegCloseKey",
+    "RegDeleteKey",
+    "RegDeleteValue",
+    "socket",
+    "bind",
+    "connect",
+    "send",
+    "recv",
+    "close",
+  ];
+  return funcNames.includes(message.funcName);
+};
+
+const funcTypeMap = {
+  弹窗: ["MessageBoxA", "MessageBoxW"],
+  文件操作: ["CreateFileA", "WriteFile", "ReadFile", "CloseHandle"],
+  堆操作: ["HeapCreate", "HeapAlloc", "HeapFree", "HeapDestroy"],
+  注册表操作: [
+    "RegCreateKeyEx",
+    "RegOpenKeyEx",
+    "RegSetValueEx",
+    "RegCloseKey",
+    "RegDeleteKey",
+    "RegDeleteValue",
+  ],
+  网络操作: ["socket", "bind", "connect", "send", "recv", "close"],
+};
+let funTypeReverseMap = {};
+for (let key in funcTypeMap) {
+  funcTypeMap[key].forEach((item) => {
+    funTypeReverseMap[item] = key;
+  });
+}
+
+let getOperationCacheByFunc = (func) => {
+  switch (func.funcName) {
+    case "CreateFileA":
+      return getFileOperationCacheByHandle(func.result);
+    case "WriteFile":
+    case "ReadFile":
+    case "CloseHandle":
+      return getFileOperationCacheByHandle(func.params[0].value);
+    case "RegCreateKeyEx":
+      return getRegOperationCacheByHandle(func.params[7].value);
+    case "RegOpenKeyEx":
+    case "RegSetValueEx":
+    case "RegCloseKey":
+    case "RegDeleteKey":
+    case "RegDeleteValue":
+      return getRegOperationCacheByHandle(func.params[0].value);
+    case "socket":
+      return getSocketOperationCacheByHandle(func.result);
+    case "bind":
+    case "connect":
+    case "send":
+    case "recv":
+    case "close":
+      return getSocketOperationCacheByHandle(func.params[0].value);
+  }
+};
+
+export {
+  setTagByData,
+  setConclusionByMessage,
+  shouldShowTrack,
+  funcTypeMap,
+  funTypeReverseMap,
+  getOperationCacheByFunc,
+};

@@ -6,6 +6,7 @@ import { store } from '../store.js';
 import { GetFileInfoByPid } from '../../wailsjs/go/main/App'
 import VirtualList from 'vue3-virtual-scroll-list';
 import MessageItem from "../components/MessageItem.vue";
+import { shouldShowTrack, funcTypeMap, funTypeReverseMap, getOperationCacheByFunc } from '../utils.js';
 
 // 按类别筛选
 let dataFilter = $ref(["弹窗", "文件操作", "堆操作", "注册表操作", "网络操作"]);
@@ -13,19 +14,6 @@ let dataFilterList = $ref(["弹窗", "文件操作", "堆操作", "注册表操�
 let isCheckAll = $ref(true);
 let onChooseAllChecked = () => {
     dataFilter = isCheckAll ? [] : dataFilterList;
-};
-let funcTypeMap = {
-    "弹窗": ["MessageBoxA", "MessageBoxW"],
-    "文件操作": ["CreateFileA", "WriteFile", "ReadFile", "CloseHandle"],
-    "堆操作": ["HeapCreate", "HeapAlloc", "HeapFree", "HeapDestroy"],
-    "注册表操作": ["RegCreateKeyEx", "RegOpenKeyEx", "RegSetValueEx", "RegCloseKey", "RegDeleteKey", "RegDeleteValue"],
-    "网络操作": ["socket", "bind", "connect", "send", "recv", "close"],
-};
-let funTypeReverseMap = {};
-for (let key in funcTypeMap) {
-    funcTypeMap[key].forEach(item => {
-        funTypeReverseMap[item] = key;
-    });
 }
 
 // 按威胁等级筛选
@@ -150,6 +138,11 @@ let displayDetail = (message) => {
                                 </tr>
                             </tbody>
                         </table>
+                    </n-tab-pane>
+                    <n-tab-pane name="追踪日志" tab="追踪日志" v-if="shouldShowTrack(funcDetailInfo)">
+                        <div v-for="(oper, index) in getOperationCacheByFunc(funcDetailInfo)?.operation" :key="index">
+                            {{ index + 1 }}:{{ oper }}
+                        </div>
                     </n-tab-pane>
                 </n-tabs>
             </n-card>
