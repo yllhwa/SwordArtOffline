@@ -8,6 +8,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "echarts": "^5.3.3",
     "iconv-lite": "^0.6.3",
     "js-base64": "^3.7.2",
     "vue": "^3.2.25",

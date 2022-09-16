@@ -17,9 +17,17 @@ const routes = [
     path: "/analysis",
     name: "analysis",
     meta: {
-      title: "测试",
+      title: "分析",
     },
     component: () => import("./pages/Analysis.vue"),
+  },
+  {
+    path: "/meminfo",
+    name: "meminfo",
+    meta: {
+      title: "内存信息",
+    },
+    component: () => import("./pages/Meminfo.vue"),
   },
   {
     path: "/setting",

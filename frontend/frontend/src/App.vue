@@ -1,6 +1,6 @@
 <script setup>
 import { NIcon } from "naive-ui";
-import { Home20Regular, DataPie20Regular, Settings20Regular } from "@vicons/fluent";
+import { Home20Regular, DataPie20Regular, Settings20Regular, DataLine20Regular } from "@vicons/fluent";
 import { NConfigProvider } from 'naive-ui';
 import { EventsOn } from "../wailsjs/runtime";
 import { Base64 } from 'js-base64';
@@ -53,6 +53,7 @@ EventsOn('udpMessage', (data) => {
   // 若为memcpy则单独处理
   if (_data.funcName == "memcpy") {
     store.memCacheData.push(_data);
+    console.log("get", store.memCacheData);
     return;
   }
   setTagByData(_data);
@@ -76,6 +77,12 @@ EventsOn('udpMessage', (data) => {
           <div class="menu-item" :class="{ 'item-selected': isActive }">
             <n-icon size="1.5em" :component="DataPie20Regular" />
             <span class="ml-3">行为分析</span>
+          </div>
+        </router-link>
+        <router-link to="/meminfo" class="py-2 hover:bg-gray-200" v-slot="{ isActive }">
+          <div class="menu-item" :class="{ 'item-selected': isActive }">
+            <n-icon size="1.5em" :component="DataLine20Regular" />
+            <span class="ml-3">内存分析</span>
           </div>
         </router-link>
         <router-link to="/setting" class="py-2 hover:bg-gray-200" v-slot="{ isActive }">
