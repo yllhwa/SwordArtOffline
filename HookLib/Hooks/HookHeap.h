@@ -85,7 +85,7 @@ _export BOOL WINAPI NewHeapFree(HANDLE hHeap, DWORD dwFlags, LPVOID lpMem) {
     return result;
 }
 _export BOOL WINAPI NewHeapDestroy(HANDLE hHeap) {
-    const std::string funcArgs[] = {"funcName", "hHeap", "result"};
+    const std::string funcArgs[] = {"funcName", "hHeap", "result", "extra"};
 
     BOOL result = OldHeapDestroy(hHeap);
     LONG _funcLock = (LONG) TlsGetValue(heapDestroyLock);
@@ -93,8 +93,8 @@ _export BOOL WINAPI NewHeapDestroy(HANDLE hHeap) {
         TlsSetValue(heapDestroyLock, (LPVOID) 1);
         if (heapHandleSet.find((int) hHeap) == heapHandleSet.end()) {
             std::ostringstream outputStringBuilder;
-            std::string dangerhHeap = std::to_string((int) hHeap) + "(danger)";
-            buildMessage(outputStringBuilder, funcArgs, "HeapDestroy", dangerhHeap, result);
+            std::string extraMessage = "UntrackedHeapHandle";
+            buildMessage(outputStringBuilder, funcArgs, "HeapDestroy", hHeap, result, extraMessage);
             sendUdpPacked(outputStringBuilder.str().c_str());
         } else {
             std::ostringstream outputStringBuilder;

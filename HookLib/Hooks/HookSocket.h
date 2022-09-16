@@ -97,7 +97,7 @@ _export int WINAPI NewConnect(SOCKET s, const sockaddr *name, int namelen) {
 
 int enableTracingSend = 1;
 _export int WINAPI NewSend(SOCKET s, const char *buf, int len, int flags) {
-    const std::string funcArgs[] = {"funcName", "s", "buf(base64)", "len", "flags", "result"};
+    const std::string funcArgs[] = {"funcName", "s", "buf(base64)", "len", "flags", "result", "extra"};
 
     int result = OldSend(s, buf, len, flags);
     if (enableTracingSend == 1) {
@@ -109,9 +109,9 @@ _export int WINAPI NewSend(SOCKET s, const char *buf, int len, int flags) {
         auto iter = fileContentMap.find(bufMd5Str);
         if (iter != fileContentMap.end()) {
             std::string bufBase64 = base64_encode((const unsigned char *) buf, len);
-            std::string sDanger = std::to_string(s) + "(danger)";
             std::ostringstream outputStringBuilder;
-            buildMessage(outputStringBuilder, funcArgs, "send", sDanger, bufBase64, len, flags, result);
+            std::string extraMessage = "ReadFileAndSend";
+            buildMessage(outputStringBuilder, funcArgs, "send", s, bufBase64, len, flags, result, extraMessage);
             sendUdpPacked(outputStringBuilder.str().c_str());
         } else {
             std::string bufBase64 = base64_encode((const unsigned char *) buf, len);
