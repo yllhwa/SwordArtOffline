@@ -4,7 +4,7 @@ import { Home20Regular, DataPie20Regular, Settings20Regular } from "@vicons/flue
 import { NConfigProvider } from 'naive-ui';
 import { EventsOn } from "../wailsjs/runtime";
 import { Base64 } from 'js-base64';
-import { getTagByData, setConclusionByMessage } from "./utils.js";
+import { setTagByData, setConclusionByMessage } from "./utils.js";
 import { store } from "./store.js";
 const themeOverrides = {
   common: {
@@ -20,35 +20,38 @@ EventsOn('udpMessage', (data) => {
   // console.log(data);
   // data用\n分割
   let dataArr = data.split('\n');
-  // 参数从第4个开始
-  let params = dataArr.slice(4, dataArr.length - 2);
-  let paramsArr = [];
-  // 参数两个一组，第一个是类型，第二个是数据，如果第一个中有(base64)则数据用base64解码
-  for (let i = 0; i < params.length; i += 2) {
-    let paramType = params[i];
-    let paramData = params[i + 1];
-    if (paramType.includes('(base64)')) {
-      paramType = paramType.replace('(base64)', '');
-      paramData = Base64.decode(paramData);
-    }
-    paramsArr.push([paramType, paramData]);
-  }
   let _data = {
-    pid: dataArr[1],
-    funcName: dataArr[3],
-    params: paramsArr,
-    result: dataArr[dataArr.length - 2].includes('(base64)') ?
-      Base64.decode(dataArr[dataArr.length - 1]) : dataArr[dataArr.length - 1]
+    params: []
   };
-  _data.tag = getTagByData(_data);
-  setConclusionByMessage(_data);
-  // 删除params中携带的`(danger)`
-  _data.params = _data.params.map(param => {
-    if (param[1].includes('(danger)')) {
-      param[1] = param[1].replace('(danger)', '');
+  for (let i = 0; i < dataArr.length; i += 2) {
+    // 若有(base64)
+    if (dataArr[i].includes('(base64)')) {
+      dataArr[i] = dataArr[i].replace('(base64)', '');
+      dataArr[i + 1] = Base64.decode(dataArr[i + 1]);
     }
-    return param;
-  });
+    switch (dataArr[i]) {
+      case "pid":
+        _data.pid = dataArr[i + 1];
+        break;
+      case "funcName":
+        _data.funcName = dataArr[i + 1];
+        break;
+      case "result":
+        _data.result = dataArr[i + 1];
+        break;
+      case "extra":
+        _data.extra = dataArr[i + 1];
+        break;
+      default:
+        _data.params.push({
+          name: dataArr[i],
+          value: dataArr[i + 1]
+        });
+        break;
+    }
+  }
+  setTagByData(_data);
+  setConclusionByMessage(_data);
   _data.id = store.analysisData.length;
   store.analysisData.push(_data);
 });

@@ -98,8 +98,9 @@ let displayDetail = (message) => {
                 <n-slider :marks="marks" step="mark" :tooltip="false" v-model:value="levelFilter" />
             </div>
         </n-card>
-        <virtual-list style="overflow-y: auto;" :data-key="'id'" :data-sources="store.analysisData.slice().reverse()" :estimate-size="111"
-            :data-component="MessageItem" :extra-props="{ shouldShow: shouldShow, displayDetail: displayDetail }" />
+        <virtual-list style="overflow-y: auto;" :data-key="'id'" :data-sources="store.analysisData.slice().reverse()"
+            :estimate-size="111" :data-component="MessageItem"
+            :extra-props="{ shouldShow: shouldShow, displayDetail: displayDetail }" />
         <n-modal v-model:show="showModal" transform-origin="center" class="mx-10">
             <n-card style="width: 600px" title="详细信息" :bordered="true" size="huge" role="dialog" aria-modal="true">
                 <template #header-extra>
@@ -122,8 +123,8 @@ let displayDetail = (message) => {
                                     <td>{{ funcDetailInfo.result }}</td>
                                 </tr>
                                 <tr class="py-2" v-for="param in funcDetailInfo.params" :key="param">
-                                    <td class="pr-6 whitespace-nowrap">{{ param[0] }}:</td>
-                                    <td class="whitespace-pre-wrap">{{ param[1] }}</td>
+                                    <td class="pr-6 whitespace-nowrap">{{ param.name }}:</td>
+                                    <td class="whitespace-pre-wrap">{{ param.value }}</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -149,22 +150,6 @@ let displayDetail = (message) => {
                                 </tr>
                             </tbody>
                         </table>
-                        <!-- <div class="flex flex-row">
-                            <div class="w-1/4">文件名:</div>
-                            <div class="w-3/4">{{ fileInfo.name }}</div>
-                        </div>
-                        <div class="flex flex-row" id="fileInfoPath">
-                            <div class="w-1/4">路径:</div>
-                            <div class="w-3/4 overflow-scroll select-all">{{ fileInfo.path }}</div>
-                        </div>
-                        <div class="flex flex-row">
-                            <div class="w-1/4">大小:</div>
-                            <div class="w-3/4">{{ fileInfo.size }}字节</div>
-                        </div>
-                        <div class="flex flex-row">
-                            <div class="w-1/4">修改时间:</div>
-                            <div class="w-3/4">{{ fileInfo.modTime }}</div>
-                        </div> -->
                     </n-tab-pane>
                 </n-tabs>
             </n-card>
