@@ -4,7 +4,7 @@
 
 #include <Windows.h>
 #include <iostream>
-#include "detours.h"
+#include "detours/detours.h"
 
 int main(int argc, char* argv[]) {
     STARTUPINFO si;

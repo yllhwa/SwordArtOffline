@@ -10,6 +10,7 @@
 #include "../Utils/utils.h"
 #include "../Locale/Locale.h"
 #include "../Base64/base64.h"
+#include "../LuaEngine/LuaEngine.h"
 #include <Windows.h>
 
 #define _export extern "C" __declspec(dllexport)
@@ -22,6 +23,7 @@ static int (WINAPI *OldMessageBoxW)(HWND hWnd, LPCWSTR lpText, LPCWSTR lpCaption
 // 弹窗实现
 _export int WINAPI NewMessageBoxA(HWND hWnd, LPCSTR lpText, LPCSTR lpCaption, UINT uType) {
     const std::string funcArgs[] = {"funcName", "hWnd", "lpText(base64)", "lpCaption(base64)", "uType", "result"};
+    LuaEnter("EnterMessageBoxA", hWnd, lpText, lpCaption, uType);
 
     int result = OldMessageBoxA(hWnd, lpText, lpCaption, uType);
     // 构建消息
@@ -35,6 +37,8 @@ _export int WINAPI NewMessageBoxA(HWND hWnd, LPCSTR lpText, LPCSTR lpCaption, UI
     buildMessage(outputStringBuilder, funcArgs, "MessageBoxA", hWnd, base64Text, base64Caption, uType, result);
     // 发送消息
     sendUdpPacked(outputStringBuilder.str().c_str());
+
+    LuaLeave("LeaveMessageBoxA", result);
     return result;
 }
 

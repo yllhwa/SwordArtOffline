@@ -1,7 +1,8 @@
 ﻿#define UNICODE
 
 #include "UDPClient/UDPClient.h"
-#include "detours.h"
+#include "detours/detours.h"
+#include "LuaEngine/LuaEngine.h"
 #include "Hooks/common.h"
 #include "Hooks/HookMessageBox.h"
 #include "Hooks/HookFile.h"
@@ -91,6 +92,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
             //避免被重复加载
             initLocks();
             initUDPClient();
+            initLuaEngine();
             StartHook();
             break;
         case DLL_THREAD_ATTACH:

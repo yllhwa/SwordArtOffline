@@ -14,6 +14,14 @@ export function OpenExeDialog() {
   return window['go']['main']['App']['OpenExeDialog']();
 }
 
+export function OpenFileByDefaultApplication(arg1) {
+  return window['go']['main']['App']['OpenFileByDefaultApplication'](arg1);
+}
+
+export function ReadFile(arg1) {
+  return window['go']['main']['App']['ReadFile'](arg1);
+}
+
 export function StartListenUDP() {
   return window['go']['main']['App']['StartListenUDP']();
 }

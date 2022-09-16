@@ -30,6 +30,14 @@ const routes = [
     component: () => import("./pages/Meminfo.vue"),
   },
   {
+    path: "/luaengine",
+    name: "luaengine",
+    meta: {
+      title: "Lua脚本",
+    },
+    component: () => import("./pages/LuaEngine.vue"),
+  },
+  {
     path: "/setting",
     name: "setting",
     meta: {

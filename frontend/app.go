@@ -138,3 +138,26 @@ func (app *App) GetFileInfoByPid(pid int) FileInfo {
 	}
 	return jsFileInfo
 }
+
+func (app *App) ReadFile(filePath string) string {
+	file, err := os.Open(filePath)
+	if err != nil {
+		println("读取文件失败:", err)
+		return ""
+	}
+	defer file.Close()
+	// 读取文件内容
+	data, err := ioutil.ReadAll(file)
+	if err != nil {
+		println("读取文件失败:", err)
+		return ""
+	}
+	return string(data)
+}
+
+func (app *App) OpenFileByDefaultApplication(filePath string) {
+	err := exec.Command("cmd", "/c", "start", filePath).Start()
+	if err != nil {
+		println("打开文件失败:", err)
+	}
+}

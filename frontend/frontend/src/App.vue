@@ -1,11 +1,14 @@
 <script setup>
 import { NIcon } from "naive-ui";
-import { Home20Regular, DataPie20Regular, Settings20Regular, DataLine20Regular } from "@vicons/fluent";
+import { Home20Regular, DataPie20Regular, Settings20Regular, DataLine20Regular, Document20Regular } from "@vicons/fluent";
 import { NConfigProvider } from 'naive-ui';
 import { EventsOn } from "../wailsjs/runtime";
 import { Base64 } from 'js-base64';
 import { setTagByData, setConclusionByMessage } from "./utils.js";
 import { store } from "./store.js";
+import hljs from 'highlight.js/lib/core'
+import lua from 'highlight.js/lib/languages/lua'
+hljs.registerLanguage('lua', lua)
 const themeOverrides = {
   common: {
     primaryColor: '#0078d7',
@@ -64,7 +67,7 @@ EventsOn('udpMessage', (data) => {
 </script>
 
 <template>
-  <n-config-provider :theme-overrides="themeOverrides" abstract>
+  <n-config-provider :theme-overrides="themeOverrides" :hljs="hljs" abstract>
     <div class="flex flex-row h-full">
       <div class="flex flex-col w-1/5 py-2 bg-gray-100 select-none shadow-xl">
         <router-link to="/index" class="py-2 hover:bg-gray-200" v-slot="{ isActive }">
@@ -83,6 +86,12 @@ EventsOn('udpMessage', (data) => {
           <div class="menu-item" :class="{ 'item-selected': isActive }">
             <n-icon size="1.5em" :component="DataLine20Regular" />
             <span class="ml-3">内存分析</span>
+          </div>
+        </router-link>
+        <router-link to="/luaengine" class="py-2 hover:bg-gray-200" v-slot="{ isActive }">
+          <div class="menu-item" :class="{ 'item-selected': isActive }">
+            <n-icon size="1.5em" :component="Document20Regular" />
+            <span class="ml-3">Lua脚本</span>
           </div>
         </router-link>
         <router-link to="/setting" class="py-2 hover:bg-gray-200" v-slot="{ isActive }">

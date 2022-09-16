@@ -16,9 +16,9 @@ if(CURRENT_PLATFORM MATCHES "x86")
     link_directories("lib.X86")
 endif()
 
-link_libraries(detours.lib Ws2_32.lib)
+link_libraries(detours.lib Ws2_32.lib Lua54.lib)
 
-add_library(HookDemo SHARED main.cpp UDPClient/UDPClient.cpp UDPClient/UDPClient.h Base64/base64.cpp Base64/base64.h Locale/Locale.cpp Locale/Locale.h MD5/md5.h Utils/utils.cpp Utils/utils.h Hooks/HookMessageBox.h Hooks/HookFile.h Hooks/common.h Hooks/HookHeap.h Hooks/HookSocket.h Hooks/HookReg.h Hooks/HookMem.h)
+add_library(HookDemo SHARED main.cpp UDPClient/UDPClient.cpp UDPClient/UDPClient.h Base64/base64.cpp Base64/base64.h Locale/Locale.cpp Locale/Locale.h MD5/md5.h Utils/utils.cpp Utils/utils.h Hooks/HookMessageBox.h Hooks/HookFile.h Hooks/common.h Hooks/HookHeap.h Hooks/HookSocket.h Hooks/HookReg.h Hooks/HookMem.h LuaEngine/LuaEngine.h)
 
 add_executable(Injector Injector/Injector.cpp)
 
