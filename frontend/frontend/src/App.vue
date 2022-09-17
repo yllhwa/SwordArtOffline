@@ -1,6 +1,6 @@
 <script setup>
 import { NIcon } from "naive-ui";
-import { Home20Regular, DataPie20Regular, Settings20Regular, DataLine20Regular, Document20Regular } from "@vicons/fluent";
+import { Home20Regular, DataPie20Regular, Settings20Regular, DataLine20Regular, Document20Regular, ChartMultiple20Regular } from "@vicons/fluent";
 import { NConfigProvider } from 'naive-ui';
 import { EventsOn } from "../wailsjs/runtime";
 import { Base64 } from 'js-base64';
@@ -85,6 +85,12 @@ EventsOn('udpMessage', (data) => {
           <div class="menu-item" :class="{ 'item-selected': isActive }">
             <n-icon size="1.5em" :component="DataLine20Regular" />
             <span class="ml-3">内存分析</span>
+          </div>
+        </router-link>
+        <router-link to="/stat" class="py-2 hover:bg-gray-200" v-slot="{ isActive }">
+          <div class="menu-item" :class="{ 'item-selected': isActive }">
+            <n-icon size="1.5em" :component="ChartMultiple20Regular" />
+            <span class="ml-3">统计</span>
           </div>
         </router-link>
         <router-link to="/luaengine" class="py-2 hover:bg-gray-200" v-slot="{ isActive }">

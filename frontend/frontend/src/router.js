@@ -30,6 +30,14 @@ const routes = [
     component: () => import("./pages/Meminfo.vue"),
   },
   {
+    path: "/stat",
+    name: "stat",
+    meta: {
+      title: "统计",
+    },
+    component: () => import("./pages/Stat.vue"),
+  },
+  {
     path: "/luaengine",
     name: "luaengine",
     meta: {
