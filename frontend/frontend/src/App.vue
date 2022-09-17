@@ -100,7 +100,11 @@ EventsOn('udpMessage', (data) => {
           </div>
         </router-link>
       </div>
-      <router-view class="w-4/5"></router-view>
+      <router-view v-slot="{ Component }" class="w-4/5">
+        <keep-alive>
+          <component :is="Component" />
+        </keep-alive>
+      </router-view>
     </div>
   </n-config-provider>
 </template>

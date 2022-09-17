@@ -6,49 +6,44 @@ import * as echarts from 'echarts/core';
 import { GraphChart } from 'echarts/charts';
 import { CanvasRenderer } from 'echarts/renderers';
 import { onMounted } from "@vue/runtime-core";
-echarts.use([GraphChart, CanvasRenderer]);
 let lastLen = 0;
-onMounted(() => {
-    let chartDom = document.getElementById('main');
-    let myChart = echarts.init(chartDom);
-    let option;
-    const data = [];
-    const edges = [];
-    option = {
-        // 关闭动画
-        stateAnimation: {
-            duration: 0,
-            easing: 'linear'
-        },
-        animation: false,
-        series: [
-            {
-                type: 'graph',
-                layout: 'force',
-                animation: false,
-                data: data,
-                roam: true,
-                force: {
-                    // initLayout: 'circular'
-                    // gravity: 0
-                    repulsion: 100,
-                    edgeLength: 5,
-                    // 箭头
-                    edgeSymbol: ['circle', 'arrow'],
-
-                    // initLayout: 'circular',
-                    // repulsion: 100,
-                    // gravity: 0.1,
-                    // edgeLength: 100,
-                    // layoutAnimation: false
-                },
-                links: edges,
+let data = $ref([]);
+let edges = $ref([]);
+let chartDom, myChart, option;
+option = {
+    animation: false,
+    series: [
+        {
+            type: 'graph',
+            layout: 'force',
+            animation: false,
+            data: data,
+            roam: true,
+            force: {
+                // initLayout: 'circular'
+                // gravity: 0
+                repulsion: 100,
+                edgeLength: 5,
+                // 箭头
                 edgeSymbol: ['circle', 'arrow'],
-                edgeSymbolSize: [4, 10],
-            },
 
-        ],
-    };
+                // initLayout: 'circular',
+                // repulsion: 100,
+                // gravity: 0.1,
+                // edgeLength: 100,
+                // layoutAnimation: false
+            },
+            edges: edges,
+            edgeSymbol: ['circle', 'arrow'],
+            edgeSymbolSize: [4, 10],
+        },
+
+    ],
+};
+onMounted(() => {
+    echarts.use([GraphChart, CanvasRenderer]);
+    chartDom = document.getElementById('main');
+    myChart = echarts.init(chartDom);
     setInterval(function () {
         // 长度和上次相同则不更新
         if (store.memCacheData.length == lastLen) {
@@ -88,10 +83,8 @@ onMounted(() => {
                 });
             }
         }
-
-        option && myChart.setOption(option);
-
-    })
+        myChart.setOption(option);
+    }, 200)
 })
 
 </script>
