@@ -1,10 +1,11 @@
-import { reactive } from "vue";
+import { reactive, shallowReactive } from "vue";
 
 const store = reactive({
-  analysisData: [],
-  memCacheData: [],
   isInjecting: false,
   targetExe: "",
 });
 
-export { store };
+const analysisData = shallowReactive([]);
+const memCacheData = shallowReactive([]);
+
+export { store, analysisData, memCacheData };

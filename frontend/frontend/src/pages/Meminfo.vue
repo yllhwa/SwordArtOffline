@@ -1,5 +1,5 @@
 <script setup>
-import { store } from "@/store.js";
+import { memCacheData } from "@/store.js";
 import * as echarts from 'echarts/core';
 import { GraphChart } from 'echarts/charts';
 import { CanvasRenderer } from 'echarts/renderers';
@@ -36,15 +36,15 @@ onMounted(() => {
     myChart = echarts.init(chartDom);
     setInterval(function () {
         // 长度和上次相同则不更新
-        if (store.memCacheData.length == lastLen) {
+        if (memCacheData.length == lastLen) {
             return;
         }
-        lastLen = store.memCacheData.length;
+        lastLen = memCacheData.length;
         // 从缓存中取出数据
         // 从上次的最后一个开始
-        let len = store.memCacheData.length;
+        let len = memCacheData.length;
         for (let i = 0; i < len; i++) {
-            let _data = store.memCacheData[i];
+            let _data = memCacheData[i];
             // console.log(_data);
             // 从参数中取出src和dst
             let src = _data.params[0].value;

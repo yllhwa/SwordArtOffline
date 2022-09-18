@@ -1,5 +1,5 @@
 import { Base64 } from 'js-base64';
-import { store } from "./store.js";
+import { analysisData, memCacheData } from "./store.js";
 
 let folderCount = {};
 
@@ -483,13 +483,13 @@ let dealUdpMessage = (data) => {
   }
   // 若为memcpy则单独处理
   if (_data.funcName == "memcpy") {
-    store.memCacheData.push(_data);
+    memCacheData.push(_data);
     return;
   }
   setTagByData(_data);
   setConclusionByMessage(_data);
-  _data.id = store.analysisData.length;
-  store.analysisData.push(_data);
+  _data.id = analysisData.length;
+  analysisData.push(_data);
 };
 
 export {

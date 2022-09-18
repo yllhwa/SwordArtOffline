@@ -10,7 +10,7 @@ import { BarChart } from 'echarts/charts';
 import { CanvasRenderer } from 'echarts/renderers';
 import { onMounted } from "@vue/runtime-core";
 import { funTypeReverseMap } from "@/utils.js";
-import { store } from "@/store.js";
+import { analysisData } from "@/store.js";
 echarts.use([
     TooltipComponent,
     GridComponent,
@@ -86,7 +86,7 @@ let caculateCount = () => {
     countOption.series[1].data = [0, 0, 0, 0, 0, 0, 0];
     countOption.series[2].data = [0, 0, 0, 0, 0, 0, 0];
     // 遍历store.analysisData
-    store.analysisData.forEach((item) => {
+    analysisData.forEach((item) => {
         switch (item.tag.type) {
             case "正常":
                 countOption.series[0].data[indexMap[funTypeReverseMap[item.funcName]]]++;

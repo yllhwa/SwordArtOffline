@@ -3,7 +3,7 @@ import { NInput, NButton, NInputGroup } from "naive-ui";
 import { NIcon } from "naive-ui";
 import { AppGeneric20Regular, Syringe20Regular } from "@vicons/fluent";
 import { OpenExeDialog, InjectExe } from "@/../wailsjs/go/main/App"
-import { store } from "@/store";
+import { store, analysisData } from "@/store";
 import router from "@/router";
 
 let onSelectExeBtnClick = () => {
@@ -17,7 +17,7 @@ let onInjectClick = () => {
         store.isInjecting = false;
     } else {
         // 清空原有数据
-        store.analysisData = [];
+        analysisData.value = [];
         // 标记正在注入
         store.isInjecting = true;
         InjectExe(store.targetExe);
