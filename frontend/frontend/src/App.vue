@@ -1,14 +1,17 @@
 <script setup>
 import { NIcon } from "naive-ui";
 import { NConfigProvider } from 'naive-ui';
-import { EventsOn } from "../wailsjs/runtime";
-import { Base64 } from 'js-base64';
-import { setTagByData, setConclusionByMessage } from "./utils.js";
-import { store } from "./store.js";
+
 import hljs from 'highlight.js/lib/core'
 import lua from 'highlight.js/lib/languages/lua'
+
+import { EventsOn } from "../wailsjs/runtime";
+
+import { dealUdpMessage } from "./utils.js";
 import { routes } from "./router.js";
+
 hljs.registerLanguage('lua', lua)
+
 const themeOverrides = {
   common: {
     primaryColor: '#0078d7',
@@ -18,50 +21,8 @@ const themeOverrides = {
   }
 }
 
-
 EventsOn('udpMessage', (data) => {
-  // console.log(data);
-  // data用\n分割
-  let dataArr = data.split('\n');
-  let _data = {
-    params: []
-  };
-  for (let i = 0; i < dataArr.length; i += 2) {
-    // 若有(base64)
-    if (dataArr[i].includes('(base64)')) {
-      dataArr[i] = dataArr[i].replace('(base64)', '');
-      dataArr[i + 1] = Base64.decode(dataArr[i + 1]);
-    }
-    switch (dataArr[i]) {
-      case "pid":
-        _data.pid = dataArr[i + 1];
-        break;
-      case "funcName":
-        _data.funcName = dataArr[i + 1];
-        break;
-      case "result":
-        _data.result = dataArr[i + 1];
-        break;
-      case "extra":
-        _data.extra = dataArr[i + 1];
-        break;
-      default:
-        _data.params.push({
-          name: dataArr[i],
-          value: dataArr[i + 1]
-        });
-        break;
-    }
-  }
-  // 若为memcpy则单独处理
-  if (_data.funcName == "memcpy") {
-    store.memCacheData.push(_data);
-    return;
-  }
-  setTagByData(_data);
-  setConclusionByMessage(_data);
-  _data.id = store.analysisData.length;
-  store.analysisData.push(_data);
+  dealUdpMessage(data);
 });
 </script>
 
@@ -73,7 +34,7 @@ EventsOn('udpMessage', (data) => {
           v-slot="{ isActive }">
           <div class="menu-item" :class="{ 'item-selected': isActive }">
             <n-icon size="1.5em" :component="route.icon" />
-            <span class="ml-3">{{ route?.meta?.title }}</span>
+            <span class="ml-3">{{ route.meta?.title }}</span>
           </div>
         </router-link>
       </div>

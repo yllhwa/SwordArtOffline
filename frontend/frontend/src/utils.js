@@ -1,3 +1,6 @@
+import { Base64 } from 'js-base64';
+import { store } from "./store.js";
+
 let folderCount = {};
 
 let getFolderByPath = (path) => {
@@ -444,6 +447,51 @@ let getOperationCacheByFunc = (func) => {
   }
 };
 
+let dealUdpMessage = (data) => {
+  // console.log(data);
+  // data用\n分割
+  let dataArr = data.split("\n");
+  let _data = {
+    params: [],
+  };
+  for (let i = 0; i < dataArr.length; i += 2) {
+    // 若有(base64)
+    if (dataArr[i].includes("(base64)")) {
+      dataArr[i] = dataArr[i].replace("(base64)", "");
+      dataArr[i + 1] = Base64.decode(dataArr[i + 1]);
+    }
+    switch (dataArr[i]) {
+      case "pid":
+        _data.pid = dataArr[i + 1];
+        break;
+      case "funcName":
+        _data.funcName = dataArr[i + 1];
+        break;
+      case "result":
+        _data.result = dataArr[i + 1];
+        break;
+      case "extra":
+        _data.extra = dataArr[i + 1];
+        break;
+      default:
+        _data.params.push({
+          name: dataArr[i],
+          value: dataArr[i + 1],
+        });
+        break;
+    }
+  }
+  // 若为memcpy则单独处理
+  if (_data.funcName == "memcpy") {
+    store.memCacheData.push(_data);
+    return;
+  }
+  setTagByData(_data);
+  setConclusionByMessage(_data);
+  _data.id = store.analysisData.length;
+  store.analysisData.push(_data);
+};
+
 export {
   setTagByData,
   setConclusionByMessage,
@@ -451,4 +499,5 @@ export {
   funcTypeMap,
   funTypeReverseMap,
   getOperationCacheByFunc,
+  dealUdpMessage,
 };
