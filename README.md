@@ -1,5 +1,7 @@
 ## 华中科技大学 网络空间安全学院 2020级 软件安全 课程设计
 
+![CI status](https://github.com/yllhwa/SwordArtOffline/actions/workflows/build.yml/badge.svg)
+
 ### 目录说明
 1. demos  
    样本库
