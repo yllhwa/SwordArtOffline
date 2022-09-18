@@ -10,6 +10,10 @@
 4. HookLib  
    hook dll和注射器
 
+### 二进制文件
+已开启自动构建，在Actions中可以下载
+![image](./docs/imgs/workflow.png)
+
 ### LICENSE
 GPLV3  
 请注意协议的限制
