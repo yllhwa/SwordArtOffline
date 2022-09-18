@@ -11,8 +11,8 @@ import {
 import { BarChart } from 'echarts/charts';
 import { CanvasRenderer } from 'echarts/renderers';
 import { onMounted } from "@vue/runtime-core";
-import { funTypeReverseMap } from "../utils.js";
-import { store } from "../store.js";
+import { funTypeReverseMap } from "@/utils.js";
+import { store } from "@/store.js";
 echarts.use([
     TooltipComponent,
     GridComponent,

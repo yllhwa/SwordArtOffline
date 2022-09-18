@@ -2,15 +2,12 @@
 import { NInput, NButton, NInputGroup } from "naive-ui";
 import { NIcon } from "naive-ui";
 import { AppGeneric20Regular, Syringe20Regular, Home20Regular } from "@vicons/fluent";
-import { OpenExeDialog, InjectExe } from '../../wailsjs/go/main/App'
-import { store } from "../store.js";
-import router from '../router'
+import { OpenExeDialog, InjectExe } from "@/../wailsjs/go/main/App"
+import { store } from "@/store";
+import router from "@/router";
 
-function openExeDialog() {
-    return OpenExeDialog();
-}
 let onSelectExeBtnClick = () => {
-    openExeDialog().then(exe => {
+    OpenExeDialog().then(exe => {
         store.targetExe = exe;
     })
 }
@@ -18,7 +15,6 @@ let onSelectExeBtnClick = () => {
 let onInjectClick = () => {
     if (store.isInjecting) {
         store.isInjecting = false;
-        // StopListenUDP();
     } else {
         // 清空原有数据
         store.analysisData = [];

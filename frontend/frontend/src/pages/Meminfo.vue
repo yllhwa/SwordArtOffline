@@ -1,7 +1,7 @@
 <script setup>
 import { NIcon } from "naive-ui";
 import { DataLine20Regular } from "@vicons/fluent";
-import { store } from "../store.js";
+import { store } from "@/store.js";
 import * as echarts from 'echarts/core';
 import { GraphChart } from 'echarts/charts';
 import { CanvasRenderer } from 'echarts/renderers';

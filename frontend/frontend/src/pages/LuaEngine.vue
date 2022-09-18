@@ -2,7 +2,7 @@
 import { NCode, NButton } from "naive-ui";
 import { NIcon } from "naive-ui";
 import { Document20Regular } from "@vicons/fluent";
-import { ReadFile, OpenFileByDefaultApplication } from '../../wailsjs/go/main/App'
+import { ReadFile, OpenFileByDefaultApplication } from '@/../wailsjs/go/main/App'
 let luaFileContent = $ref("");
 ReadFile("LuaEngine.lua").then(content => {
     luaFileContent = content;

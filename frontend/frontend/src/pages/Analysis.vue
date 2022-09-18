@@ -2,10 +2,10 @@
 import { NCard, NCheckboxGroup, NCheckbox, NSpace, NList, NListItem, NThing, NTag, NIcon, NSlider, NModal } from 'naive-ui';
 import { NTabs, NTabPane } from 'naive-ui';
 import { DataPie20Regular, Dismiss20Regular } from '@vicons/fluent';
-import { store } from '../store.js';
-import { GetFileInfoByPid } from '../../wailsjs/go/main/App'
+import { store } from '@/store.js';
+import { GetFileInfoByPid } from '@/../wailsjs/go/main/App'
 import VirtualList from 'vue3-virtual-scroll-list';
-import MessageItem from "../components/MessageItem.vue";
+import MessageItem from "@/components/MessageItem.vue";
 import { shouldShowTrack, funcTypeMap, funTypeReverseMap, getOperationCacheByFunc } from '../utils.js';
 
 // 按类别筛选
