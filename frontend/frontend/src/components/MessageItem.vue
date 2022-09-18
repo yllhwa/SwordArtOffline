@@ -1,10 +1,10 @@
 <script setup>
 import { NSpace, NThing, NTag, NCard } from 'naive-ui';
 const props = defineProps({
-    index: { // index of current item
+    index: {
         type: Number
     },
-    source: { // here is: {uid: 'unique_1', text: 'abc'}
+    source: {
         type: Object,
         default() {
             return {}

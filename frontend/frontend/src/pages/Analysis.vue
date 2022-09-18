@@ -1,12 +1,12 @@
 <script setup>
-import { NCard, NCheckboxGroup, NCheckbox, NSpace, NList, NListItem, NThing, NTag, NIcon, NSlider, NModal } from 'naive-ui';
+import { NCard, NCheckboxGroup, NCheckbox, NSpace, NIcon, NSlider, NModal } from 'naive-ui';
 import { NTabs, NTabPane } from 'naive-ui';
 import { DataPie20Regular, Dismiss20Regular } from '@vicons/fluent';
 import { store } from '@/store.js';
 import { GetFileInfoByPid } from '@/../wailsjs/go/main/App'
 import VirtualList from 'vue3-virtual-scroll-list';
 import MessageItem from "@/components/MessageItem.vue";
-import { shouldShowTrack, funcTypeMap, funTypeReverseMap, getOperationCacheByFunc } from '../utils.js';
+import { shouldShowTrack, funTypeReverseMap, getOperationCacheByFunc } from '../utils.js';
 
 // 按类别筛选
 let dataFilter = $ref(["弹窗", "文件操作", "堆操作", "注册表操作", "网络操作"]);
@@ -173,7 +173,6 @@ let displayDetail = (message) => {
     width: 1000px !important;
     max-width: 90vw !important;
     max-height: 95vh !important;
-    /* @apply overflow-x-hidden overflow-y-auto; */
 }
 
 .n-tab-pane {

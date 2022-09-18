@@ -20,18 +20,10 @@ option = {
             data: data,
             roam: true,
             force: {
-                // initLayout: 'circular'
-                // gravity: 0
                 repulsion: 100,
                 edgeLength: 5,
                 // 箭头
                 edgeSymbol: ['circle', 'arrow'],
-
-                // initLayout: 'circular',
-                // repulsion: 100,
-                // gravity: 0.1,
-                // edgeLength: 100,
-                // layoutAnimation: false
             },
             edges: edges,
             edgeSymbol: ['circle', 'arrow'],

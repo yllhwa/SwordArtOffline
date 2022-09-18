@@ -1,5 +1,5 @@
 <script setup>
-import { NInput, NButton, NInputGroup } from "naive-ui";
+import { NButton } from "naive-ui";
 import { NIcon } from "naive-ui";
 import { ChartMultiple20Regular } from "@vicons/fluent";
 import * as echarts from 'echarts/core';
@@ -50,9 +50,6 @@ countOption = {
             name: '正常',
             type: 'bar',
             stack: 'total',
-            // label: {
-            //     show: true
-            // },
             emphasis: {
                 focus: 'series'
             },
@@ -62,9 +59,6 @@ countOption = {
             name: '可疑',
             type: 'bar',
             stack: 'total',
-            // label: {
-            //     show: true
-            // },
             emphasis: {
                 focus: 'series'
             },
@@ -74,9 +68,6 @@ countOption = {
             name: '危险',
             type: 'bar',
             stack: 'total',
-            // label: {
-            //     show: true
-            // },
             emphasis: {
                 focus: 'series'
             },
@@ -115,12 +106,8 @@ onMounted(
     () => {
         caculateCount();
         countDom = document.getElementById('stat');
-        // var chartDom2 = document.getElementById('stat2');
         countChart = echarts.init(countDom);
-        // var myChart2 = echarts.init(chartDom2);
-
         countOption && countChart.setOption(countOption);
-        // option && myChart2.setOption(option);
     }
 )
 
@@ -140,12 +127,6 @@ let onRefreshClick = () => {
             <div>
                 <n-button @click="onRefreshClick">刷新</n-button>
             </div>
-            <!-- <div class="flex flex-row h-1/2">
-                <div class="w-1/2" id="stat"></div>
-                <div class="w-1/2" id="stat2"></div>
-            </div>
-            <div class="flex flex-row h-1/2">
-            </div> -->
             <div id="stat" class="w-full h-full"></div>
         </div>
     </div>
