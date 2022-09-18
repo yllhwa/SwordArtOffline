@@ -1,7 +1,7 @@
 <script setup>
 import { NCard, NCheckboxGroup, NCheckbox, NSpace, NIcon, NSlider, NModal } from 'naive-ui';
 import { NTabs, NTabPane } from 'naive-ui';
-import { DataPie20Regular, Dismiss20Regular } from '@vicons/fluent';
+import { Dismiss20Regular } from '@vicons/fluent';
 import { store } from '@/store.js';
 import { GetFileInfoByPid } from '@/../wailsjs/go/main/App'
 import VirtualList from 'vue3-virtual-scroll-list';
@@ -68,86 +68,81 @@ let displayDetail = (message) => {
 </script>
 
 <template>
-    <div class="px-6 pt-2 pb-4 flex flex-col">
-        <div class="text-2xl py-4 flex flex-row items-center">
-            <n-icon size="1.25em" :component="DataPie20Regular" />
-            <span class="px-2">行为分析</span>
+
+    <n-card title="筛选" class="my-4">
+        <n-checkbox @update:checked="onChooseAllChecked" v-model:checked="isCheckAll" label="全选" />
+        <n-checkbox-group v-model:value="dataFilter">
+            <n-space item-style="display: flex;">
+                <n-checkbox v-for="datafilter in dataFilterList" :key="datafilter" :value="datafilter"
+                    :label="datafilter" />
+            </n-space>
+        </n-checkbox-group>
+        <div class="mt-2 w-1/5">
+            危险等级
+            <n-slider :marks="marks" step="mark" :tooltip="false" v-model:value="levelFilter" />
         </div>
-        <n-card title="筛选" class="my-4">
-            <n-checkbox @update:checked="onChooseAllChecked" v-model:checked="isCheckAll" label="全选" />
-            <n-checkbox-group v-model:value="dataFilter">
-                <n-space item-style="display: flex;">
-                    <n-checkbox v-for="datafilter in dataFilterList" :key="datafilter" :value="datafilter"
-                        :label="datafilter" />
-                </n-space>
-            </n-checkbox-group>
-            <div class="mt-2 w-1/5">
-                危险等级
-                <n-slider :marks="marks" step="mark" :tooltip="false" v-model:value="levelFilter" />
-            </div>
-        </n-card>
-        <virtual-list style="overflow-y: auto;" :data-key="'id'" :data-sources="store.analysisData.slice().reverse()"
-            :estimate-size="111" :data-component="MessageItem"
-            :extra-props="{ shouldShow: shouldShow, displayDetail: displayDetail }" />
-        <n-modal v-model:show="showModal" transform-origin="center" class="mx-10">
-            <n-card style="width: 600px" title="详细信息" :bordered="true" size="huge" role="dialog" aria-modal="true">
-                <template #header-extra>
-                    <div class="hover:bg-red-400 hover:text-white flex flex-row items-center cursor-pointer"
-                        @click="showModal = false">
-                        <n-icon size="1.5em" :component="Dismiss20Regular" />
+    </n-card>
+    <virtual-list style="overflow-y: auto;" :data-key="'id'" :data-sources="store.analysisData.slice().reverse()"
+        :estimate-size="111" :data-component="MessageItem"
+        :extra-props="{ shouldShow: shouldShow, displayDetail: displayDetail }" />
+    <n-modal v-model:show="showModal" transform-origin="center" class="mx-10">
+        <n-card style="width: 600px" title="详细信息" :bordered="true" size="huge" role="dialog" aria-modal="true">
+            <template #header-extra>
+                <div class="hover:bg-red-400 hover:text-white flex flex-row items-center cursor-pointer"
+                    @click="showModal = false">
+                    <n-icon size="1.5em" :component="Dismiss20Regular" />
+                </div>
+            </template>
+            <!-- 内容 -->
+            <n-tabs type="line">
+                <n-tab-pane name="详情" tab="详情">
+                    <table class="table-auto">
+                        <tbody>
+                            <tr class="py-2">
+                                <td class="pr-6 whitespace-nowrap">函数名:</td>
+                                <td>{{ funcDetailInfo.funcName }}</td>
+                            </tr>
+                            <tr class="py-2">
+                                <td class="pr-6 whitespace-nowrap">返回值:</td>
+                                <td>{{ funcDetailInfo.result }}</td>
+                            </tr>
+                            <tr class="py-2" v-for="param in funcDetailInfo.params" :key="param">
+                                <td class="pr-6 whitespace-nowrap">{{ param.name }}:</td>
+                                <td class="whitespace-pre-wrap">{{ param.value }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </n-tab-pane>
+                <n-tab-pane name="源程序" tab="源程序">
+                    <table class="table-auto">
+                        <tbody>
+                            <tr class="py-2">
+                                <td class="pr-3">文件名:</td>
+                                <td>{{ fileInfo.name }}</td>
+                            </tr>
+                            <tr class="py-2">
+                                <td class="pr-3">路径:</td>
+                                <td>{{ fileInfo.path }}</td>
+                            </tr>
+                            <tr class="py-2">
+                                <td class="pr-3">大小:</td>
+                                <td>{{ fileInfo.size }}字节</td>
+                            </tr>
+                            <tr class="py-2">
+                                <td class="pr-3">修改时间:</td>
+                                <td>{{ fileInfo.modTime }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </n-tab-pane>
+                <n-tab-pane name="追踪日志" tab="追踪日志" v-if="shouldShowTrack(funcDetailInfo)">
+                    <div v-for="(oper, index) in getOperationCacheByFunc(funcDetailInfo)?.operation" :key="index">
+                        {{ index + 1 }}:{{ oper }}
                     </div>
-                </template>
-                <!-- 内容 -->
-                <n-tabs type="line">
-                    <n-tab-pane name="详情" tab="详情">
-                        <table class="table-auto">
-                            <tbody>
-                                <tr class="py-2">
-                                    <td class="pr-6 whitespace-nowrap">函数名:</td>
-                                    <td>{{ funcDetailInfo.funcName }}</td>
-                                </tr>
-                                <tr class="py-2">
-                                    <td class="pr-6 whitespace-nowrap">返回值:</td>
-                                    <td>{{ funcDetailInfo.result }}</td>
-                                </tr>
-                                <tr class="py-2" v-for="param in funcDetailInfo.params" :key="param">
-                                    <td class="pr-6 whitespace-nowrap">{{ param.name }}:</td>
-                                    <td class="whitespace-pre-wrap">{{ param.value }}</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </n-tab-pane>
-                    <n-tab-pane name="源程序" tab="源程序">
-                        <table class="table-auto">
-                            <tbody>
-                                <tr class="py-2">
-                                    <td class="pr-3">文件名:</td>
-                                    <td>{{ fileInfo.name }}</td>
-                                </tr>
-                                <tr class="py-2">
-                                    <td class="pr-3">路径:</td>
-                                    <td>{{ fileInfo.path }}</td>
-                                </tr>
-                                <tr class="py-2">
-                                    <td class="pr-3">大小:</td>
-                                    <td>{{ fileInfo.size }}字节</td>
-                                </tr>
-                                <tr class="py-2">
-                                    <td class="pr-3">修改时间:</td>
-                                    <td>{{ fileInfo.modTime }}</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </n-tab-pane>
-                    <n-tab-pane name="追踪日志" tab="追踪日志" v-if="shouldShowTrack(funcDetailInfo)">
-                        <div v-for="(oper, index) in getOperationCacheByFunc(funcDetailInfo)?.operation" :key="index">
-                            {{ index + 1 }}:{{ oper }}
-                        </div>
-                    </n-tab-pane>
-                </n-tabs>
-            </n-card>
-        </n-modal>
-    </div>
+                </n-tab-pane>
+            </n-tabs>
+        </n-card>
+    </n-modal>
 </template>
 
 <style>

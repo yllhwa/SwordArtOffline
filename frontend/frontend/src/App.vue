@@ -10,6 +10,9 @@ import { EventsOn } from "../wailsjs/runtime";
 import { dealUdpMessage } from "./utils.js";
 import { routes } from "./router.js";
 
+import { useRoute } from 'vue-router'
+import { watch } from "@vue/runtime-core";
+
 hljs.registerLanguage('lua', lua)
 
 const themeOverrides = {
@@ -24,6 +27,16 @@ const themeOverrides = {
 EventsOn('udpMessage', (data) => {
   dealUdpMessage(data);
 });
+
+let _route = useRoute();
+
+let currentPageMeta = $shallowRef(routes[0]?.meta);
+watch(
+  () => _route.meta,
+  async (meta) => {
+    currentPageMeta = meta;
+  }
+)
 </script>
 
 <template>
@@ -33,16 +46,22 @@ EventsOn('udpMessage', (data) => {
         <router-link v-for="route in routes" :key="route.path" :to="route.path" class="menu-item-container"
           v-slot="{ isActive }">
           <div class="menu-item" :class="{ 'item-selected': isActive }">
-            <n-icon size="1.5em" :component="route.icon" />
+            <n-icon size="1.5em" :component="route.meta?.icon" />
             <span class="ml-3">{{ route.meta?.title }}</span>
           </div>
         </router-link>
       </div>
-      <router-view v-slot="{ Component }" class="w-4/5">
-        <keep-alive>
-          <component :is="Component" />
-        </keep-alive>
-      </router-view>
+      <div class="w-4/5 px-6 pt-2 pb-4 flex flex-col">
+        <div class="text-2xl py-4 flex flex-row items-center">
+          <n-icon size="1.25em" :component="currentPageMeta?.icon" />
+          <span class="px-2">{{ currentPageMeta?.title }}</span>
+        </div>
+        <router-view v-slot="{ Component }">
+          <keep-alive>
+            <component :is="Component" />
+          </keep-alive>
+        </router-view>
+      </div>
     </div>
   </n-config-provider>
 </template>

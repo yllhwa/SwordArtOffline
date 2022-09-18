@@ -1,7 +1,5 @@
 <script setup>
 import { NButton } from "naive-ui";
-import { NIcon } from "naive-ui";
-import { ChartMultiple20Regular } from "@vicons/fluent";
 import * as echarts from 'echarts/core';
 import {
     TooltipComponent,
@@ -118,17 +116,11 @@ let onRefreshClick = () => {
 </script>
 
 <template>
-    <div class="px-6 py-2">
-        <div class="text-2xl py-4 flex flex-row items-center">
-            <n-icon size="1.25em" :component="ChartMultiple20Regular" />
-            <span class="px-2">统计</span>
+    <div class="py-2 flex flex-col h-full">
+        <div>
+            <n-button @click="onRefreshClick">刷新</n-button>
         </div>
-        <div class="py-2 flex flex-col h-full">
-            <div>
-                <n-button @click="onRefreshClick">刷新</n-button>
-            </div>
-            <div id="stat" class="w-full h-full"></div>
-        </div>
+        <div id="stat" class="w-full h-full"></div>
     </div>
 </template>
 

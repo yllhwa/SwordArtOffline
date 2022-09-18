@@ -1,6 +1,4 @@
 <script setup>
-import { NIcon } from "naive-ui";
-import { DataLine20Regular } from "@vicons/fluent";
 import { store } from "@/store.js";
 import * as echarts from 'echarts/core';
 import { GraphChart } from 'echarts/charts';
@@ -82,13 +80,7 @@ onMounted(() => {
 </script>
 
 <template>
-    <div class="px-6 py-2">
-        <div class="text-2xl py-4 flex flex-row items-center">
-            <n-icon size="1.25em" :component="DataLine20Regular" />
-            <span class="px-2">内存分析</span>
-        </div>
-        <div class="py-2 flex flex-col h-full" id="main">
-        </div>
+    <div class="py-2 flex flex-col h-full" id="main">
     </div>
 </template>
 
