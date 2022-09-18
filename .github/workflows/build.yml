@@ -18,7 +18,6 @@ jobs:
     - name: Build HookLib
       working-directory: HookLib
       run: |
-        choco install ninja
         mkdir build
         cd build
         cmake -DCI_BUILD="true" -DCMAKE_GENERATOR_PLATFORM=Win32 -G "Visual Studio 17 2022" ..
@@ -27,7 +26,8 @@ jobs:
     - name: Build GUI
       working-directory: frontend
       run: |
-        go get -u github.com/wailsapp/wails/cmd/wails
+        go install github.com/wailsapp/wails/v2/cmd/wails@latest
+        Add-Content $env:GITHUB_PATH ${env:GOPATH}+"/bin"
         cd frontend
         npm install
         npm run build
