@@ -1,0 +1,55 @@
+name: Build CI Version
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+
+    - name: Check out code
+      uses: actions/checkout@v3
+
+    - name: Build HookLib
+      working-directory: HookLib
+      run: |
+        choco install ninja
+        mkdir build
+        cd build
+        cmake -DCI_BUILD="true" -DCMAKE_GENERATOR_PLATFORM=Win32 -G "Visual Studio 17 2022" ..
+        cmake --build . --config Release
+
+    - name: Build GUI
+      working-directory: frontend
+      run: |
+        go get -u github.com/wailsapp/wails/cmd/wails
+        cd frontend
+        npm install
+        npm run build
+        cd ../
+        choco install upx
+        wails build -clean -upx -webview2 error
+      
+    - name: Zip Release
+      run : |
+        mkdir release
+        copy HookLib/build/Release/HookDemo.dll release
+        copy HookLib/build/Release/Injector.exe release
+        copy frontend/build/bin/SwordArtOffline.exe release
+        copy frontend/LuaEngine.lua release
+        cd release
+        7z a -tzip SwordArtOffline.zip *
+
+    - name: Upload a Build Artifact
+      uses: actions/upload-artifact@v3.0.0
+      with:
+        name: SwordArtOffline.zip
+        path: release/SwordArtOffline.zip
+        if-no-files-found: error
+        retention-days: 30
+
