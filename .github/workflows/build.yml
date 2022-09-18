@@ -38,20 +38,18 @@ jobs:
           choco install upx
           wails build -clean -upx -webview2 error
 
-      - name: Zip Release
+      - name: Copy File To Release
         run: |
           mkdir release
           copy HookLib/build/Release/HookDemo.dll release
           copy HookLib/build/Release/Injector.exe release
           copy frontend/build/bin/SwordArtOffline.exe release
           copy frontend/LuaEngine.lua release
-          cd release
-          7z a -tzip SwordArtOffline.zip *
 
       - name: Upload a Build Artifact
         uses: actions/upload-artifact@v3.0.0
         with:
-          name: SwordArtOffline.zip
-          path: release/SwordArtOffline.zip
+          name: SwordArtOffline
+          path: release
           if-no-files-found: error
           retention-days: 30
