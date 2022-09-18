@@ -4,12 +4,12 @@ import {main} from '../models';
 
 export function GetFileInfoByPid(arg1:number):Promise<main.FileInfo>;
 
-export function InjectExe(arg1:string):void;
+export function InjectExe(arg1:string):Promise<void>;
 
 export function OpenExeDialog():Promise<string>;
 
-export function OpenFileByDefaultApplication(arg1:string):void;
+export function OpenFileByDefaultApplication(arg1:string):Promise<void>;
 
 export function ReadFile(arg1:string):Promise<string>;
 
-export function StartListenUDP():void;
+export function StartListenUDP():Promise<void>;

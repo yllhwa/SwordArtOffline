@@ -3,7 +3,7 @@ module changeme
 go 1.17
 
 require (
-	github.com/wailsapp/wails/v2 v2.0.0-beta.43
+	github.com/wailsapp/wails/v2 v2.0.0-rc.1.1
 	golang.org/x/text v0.3.7
 )
 
@@ -26,7 +26,7 @@ require (
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.1 // indirect
 	github.com/wailsapp/mimetype v1.4.1 // indirect
-	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5 // indirect
+	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519 // indirect
 	golang.org/x/net v0.0.0-20211015210444-4f30a5c0130f // indirect
 	golang.org/x/sys v0.0.0-20220114195835-da31bd327af9 // indirect
 )
